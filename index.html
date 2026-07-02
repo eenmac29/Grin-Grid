@@ -1,3 +1,8 @@
+Here is your updated, fully integrated single-file code.
+
+The UI has been redesigned with a strong numerical hierarchy (`01`, `02`, etc.) and clean spacing. The fragment shader has been upgraded to support completely disabling the grid structure, calculating custom line angles on a localized vector matrix, and distorting vectors dynamically to generate clean wavy lines.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,11 +27,11 @@
             display: flex;
         }
 
-        /* --- UI Layout --- */
+        /* --- UI Layout & Stronger Hierarchy --- */
         #sidebar {
             width: 340px;
             height: 100%;
-            border-right: 1px solid #333;
+            border-right: 1px solid #222;
             display: flex;
             flex-direction: column;
             background: #000;
@@ -46,42 +51,50 @@
         .scroll-area {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 20px 15px;
         }
 
         .scroll-area::-webkit-scrollbar {
             width: 4px;
         }
         .scroll-area::-webkit-scrollbar-thumb {
-            background: #444;
+            background: #333;
         }
 
-        /* --- Minimalist BW Styling --- */
         h1 {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
-            letter-spacing: 2px;
-            padding: 20px 15px;
-            border-bottom: 1px solid #333;
+            letter-spacing: 3px;
+            padding: 25px 15px;
+            border-bottom: 1px solid #222;
             text-transform: uppercase;
+            color: #fff;
         }
 
+        /* --- Structural Hierarchy Sections --- */
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 35px;
         }
 
         .section-title {
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            color: #888;
-            border-bottom: 1px dashed #222;
-            padding-bottom: 4px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            color: #fff;
+            border-bottom: 1px solid #fff;
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .section-title span {
+            color: #666;
         }
 
         .control-group {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             flex-direction: column;
         }
@@ -89,19 +102,20 @@
         .control-label {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 4px;
-            color: #aaa;
+            margin-bottom: 5px;
+            color: #888;
         }
 
         .control-label span.val {
             color: #fff;
+            font-weight: bold;
         }
 
         /* --- Inputs & Buttons --- */
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
-            background: #222;
+            background: #1a1a1a;
             height: 2px;
             outline: none;
         }
@@ -113,13 +127,17 @@
             background: #fff;
             cursor: pointer;
             border-radius: 0;
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
 
         select, button {
             background: #000;
-            border: 1px solid #333;
+            border: 1px solid #222;
             color: #fff;
-            padding: 6px 10px;
+            padding: 8px 10px;
             font-family: inherit;
             font-size: 11px;
             cursor: pointer;
@@ -127,6 +145,7 @@
             text-transform: uppercase;
             width: 100%;
             text-align: left;
+            transition: all 0.15s ease;
         }
 
         select:hover, button:hover {
@@ -147,33 +166,35 @@
         .toggle-btn.active {
             background: #fff;
             color: #000;
+            border-color: #fff;
         }
 
         /* --- Drag & Drop Zone --- */
         #drop-zone {
-            border: 1px dashed #333;
+            border: 1px dashed #222;
             padding: 20px;
             text-align: center;
             cursor: pointer;
             margin-bottom: 15px;
-            transition: border-color 0.2s;
+            color: #666;
+            transition: all 0.2s;
         }
 
         #drop-zone:hover, #drop-zone.dragover {
             border-color: #fff;
+            color: #fff;
         }
 
         /* --- Canvas Container --- */
         #canvas-wrapper {
             position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
             background: #000;
             max-width: 100%;
             max-height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s ease-out;
         }
 
         canvas {
@@ -188,8 +209,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: #111;
-            border: 1px solid #222;
+            background: #0a0a0a;
+            border: 1px solid #111;
             padding: 6px;
             margin-bottom: 4px;
             cursor: grab;
@@ -211,8 +232,9 @@
             font-weight: bold;
             animation: blink 1s infinite;
             display: none;
-            margin-top: 5px;
+            margin-top: 8px;
             text-align: center;
+            letter-spacing: 1px;
         }
 
         @keyframes blink { 50% { opacity: 0; } }
@@ -225,10 +247,10 @@
         <div class="scroll-area">
             
             <div class="section">
-                <div class="section-title">Source Input</div>
+                <div class="section-title">01 <span>/ SOURCE INPUT</span></div>
                 <div id="drop-zone">DRAG & DROP IMAGE/VIDEO OR CLICK</div>
                 <input type="file" id="file-input" accept="image/*,video/*" style="display:none;">
-                <button id="webcam-btn" class="toggle-btn" style="margin-bottom:10px;">Toggle Webcam</button>
+                <button id="webcam-btn" class="toggle-btn" style="margin-bottom:12px;">Toggle Webcam</button>
                 
                 <div class="control-group">
                     <div class="control-label">Gamma <span class="val" id="v-gamma">1.0</span></div>
@@ -250,7 +272,7 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Canvas & Aspect</div>
+                <div class="section-title">02 <span>/ CANVAS GEOMETRY</span></div>
                 <div class="control-group" style="margin-bottom:8px;">
                     <select id="p-aspect">
                         <option value="16:9">Horizontal 16:9</option>
@@ -265,13 +287,25 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <div class="control-label">UI Scale <span class="val" id="v-scale">100%</span></div>
+                    <div class="control-label">UI Visual Scale <span class="val" id="v-scale">100%</span></div>
                     <input type="range" id="p-scale" min="20" max="100" step="1" value="100">
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Grid Structure</div>
+                <div class="section-title">03 <span>/ GRID DESIGNER</span></div>
+                <div class="control-group" style="margin-bottom:12px;">
+                    <div class="control-label">Grid Line Generator</div>
+                    <select id="p-grid-style">
+                        <option value="1" selected>Straight Lines Pattern</option>
+                        <option value="2">Wavy Lines Pattern</option>
+                        <option value="0">Disable Grid (Off)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Line Render Angle <span class="val" id="v-line-angle">0°</span></div>
+                    <input type="range" id="p-line-angle" min="-180" max="180" step="1" value="0">
+                </div>
                 <div class="control-group">
                     <div class="control-label">Grid Bands <span class="val" id="v-bands">5</span></div>
                     <input type="range" id="p-bands" min="1" max="30" step="1" value="5">
@@ -297,7 +331,7 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Animation</div>
+                <div class="section-title">04 <span>/ ANIMATION CONTROL</span></div>
                 <button id="anim-toggle" class="toggle-btn active" style="margin-bottom:8px;">Engine: PLAYING</button>
                 <div class="control-group">
                     <div class="control-label">Gradient Speed <span class="val" id="v-speed">20</span></div>
@@ -313,13 +347,13 @@
                     </select>
                 </div>
                 <div class="btn-group">
-                    <button id="p-loop-grad" class="toggle-btn active">Loop Phase (0-100)</button>
-                    <button id="p-bounce-grad" class="toggle-btn">Bounce Phase (0-100-0)</button>
+                    <button id="p-loop-grad" class="toggle-btn active">Loop Phase</button>
+                    <button id="p-bounce-grad" class="toggle-btn">Bounce Phase</button>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Color Mapping & Stepping</div>
+                <div class="section-title">05 <span>/ COLOR SYSTEMS</span></div>
                 <div class="control-group">
                     <div class="control-label">Tone Stepping Blocks <span class="val" id="v-step">0</span></div>
                     <input type="range" id="p-step" min="0" max="32" step="1" value="0">
@@ -331,12 +365,12 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Export Engine</div>
+                <div class="section-title">06 <span>/ PRODUCTION EXPORTS</span></div>
                 <div class="btn-group" style="margin-bottom:5px;">
                     <button id="exp-low">Render 1000px</button>
                     <button id="exp-high">Render 3000px</button>
                 </div>
-                <button id="exp-video" style="background:#111; text-align:center;">Record Output (Start/Stop)</button>
+                <button id="exp-video" style="background:#0a0a0a; text-align:center;">Record Output (Start/Stop)</button>
                 <div id="recording-status">● RECORDING BUFFER ACTIVE</div>
             </div>
 
@@ -381,6 +415,10 @@
             uniform int u_dist;
             uniform float u_angle;
             uniform bool u_rotate;
+            
+            // New Structural Configurations
+            uniform int u_grid_style;
+            uniform float u_line_angle;
 
             uniform int u_num_colors;
             uniform vec3 u_colors[5];
@@ -424,16 +462,33 @@
                     sizeFactor = mod(bandIndex, 2.0) == 0.0 ? 1.0 : 0.35;
                 }
 
-                float localY = fract(gridUv.y * u_bands);
-                float rowPattern = sin(localY * u_rows * 3.1415926 * sizeFactor + u_time * 2.0);
-                rowPattern = smoothstep(-0.2, 0.2, rowPattern);
+                // Grid Processing Matrix
+                float rowPattern = 0.0;
+                if (u_grid_style > 0) {
+                    // Local coordinate mapping within bands
+                    float localY = fract(gridUv.y * u_bands) - 0.5;
+                    float localX = gridUv.x - 0.5;
+                    
+                    // Rotate directional line vector matrices
+                    float lineRad = radians(u_line_angle);
+                    float rotY = localX * sin(lineRad) + localY * cos(lineRad);
+                    float rotX = localX * cos(lineRad) - localY * sin(lineRad);
+                    
+                    // Apply spatial modifications for waves
+                    if (u_grid_style == 2) {
+                        rotY += sin(rotX * 24.0 + u_time * 3.5) * 0.04;
+                    }
+                    
+                    float sinVal = sin((rotY + 0.5) * u_rows * 3.1415926 * sizeFactor + u_time * 2.0);
+                    rowPattern = smoothstep(-0.2, 0.2, sinVal) * 0.3;
+                }
 
                 float rad = radians(u_angle);
                 mat2 rotMat = mat2(cos(rad), -sin(rad), sin(rad), cos(rad));
                 vec2 rotatedUv = rotMat * (uv - 0.5);
                 
                 float grain = noise(uv * u_resolution + vec2(u_time * 12.13));
-                float mixedValue = clamp(lum * 0.5 + (rowPattern * 0.3) + (grain * 0.2) + rotatedUv.x * 0.3, 0.0, 1.0);
+                float mixedValue = clamp(lum * 0.5 + rowPattern + (grain * 0.2) + rotatedUv.x * 0.3, 0.0, 1.0);
 
                 if(u_stepping > 0.0) {
                     mixedValue = floor(mixedValue * u_stepping) / (u_stepping - 1.0);
@@ -474,6 +529,7 @@
         const state = {
             gamma: 1.0, shadows: 0.0, midtones: 1.0, highlights: 1.0, invert: false,
             bands: 5, rows: 10, dist: 0, angle: 0, rotate: false,
+            gridStyle: 1, lineAngle: 0, // State metrics hooks
             playing: true, speed: 20, modType: 0, loopMode: 'loop', 
             stepping: 0,
             colors: [
@@ -601,6 +657,10 @@
             gl.uniform1f(gl.getUniformLocation(program, "u_highlights"), state.highlights);
             gl.uniform1i(gl.getUniformLocation(program, "u_invert"), state.invert ? 1 : 0);
 
+            // Structural Matrix Pipeline Parameters
+            gl.uniform1i(gl.getUniformLocation(program, "u_grid_style"), state.gridStyle);
+            gl.uniform1f(gl.getUniformLocation(program, "u_line_angle"), state.lineAngle);
+
             let dynamicBands = state.bands;
             let calculatedTime = state.time;
             
@@ -642,7 +702,6 @@
             gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
 
-        // --- Standard Animation Execution Loop ---
         function render(now) {
             now *= 0.001; 
             const delta = now - state.lastFrameTime;
@@ -672,7 +731,6 @@
             } : { r: 0, g: 0, b: 0 };
         }
 
-        // --- Core UI Processing Engines ---
         function generateColorListUI() {
             const container = document.getElementById('color-list');
             container.innerHTML = '';
@@ -797,6 +855,7 @@
                 { id: 'p-bands', var: 'bands', label: 'v-bands' },
                 { id: 'p-rows', var: 'rows', label: 'v-rows' },
                 { id: 'p-angle', var: 'angle', label: 'v-angle', suffix: '°' },
+                { id: 'p-line-angle', var: 'lineAngle', label: 'v-line-angle', suffix: '°' },
                 { id: 'p-speed', var: 'speed', label: 'v-speed' },
                 { id: 'p-step', var: 'stepping', label: 'v-step' }
             ];
@@ -808,6 +867,10 @@
                     state[b.var] = parseFloat(e.target.value);
                     lbl.innerText = state[b.var] + (b.suffix || '');
                 });
+            });
+
+            document.getElementById('p-grid-style').addEventListener('change', (e) => {
+                state.gridStyle = parseInt(e.target.value);
             });
 
             document.getElementById('p-invert').addEventListener('click', function() {
@@ -865,7 +928,6 @@
             generateColorListUI();
         }
 
-        // --- High Resolution Image Extraction Engine ---
         function captureFrame(size) {
             const parts = state.aspect.split(':');
             const aspectW = parseFloat(parts[0]);
@@ -879,22 +941,18 @@
                 targetW = size * ratio;
             }
 
-            // Temporarily update high resolution dimension parameters 
             canvas.width = targetW;
             canvas.height = targetH;
             gl.viewport(0, 0, targetW, targetH);
 
-            // Synchronously snapshot parameters into context
             drawFrame();
 
-            // Extract file cleanly using DataURL conversion vectors
             const dataUrl = canvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.download = `grain_grid_${size}px.png`;
             link.href = dataUrl;
             link.click();
 
-            // Safe environment recovery call loops
             resizeCanvas();
         }
 
@@ -906,7 +964,7 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 btn.innerText = "Record Output (Start/Stop)";
-                btn.style.background = "#111";
+                btn.style.background = "#0a0a0a";
                 statusIndicator.style.display = "none";
             } else {
                 recordedChunks = [];
@@ -948,3 +1006,5 @@
     </script>
 </body>
 </html>
+
+```
