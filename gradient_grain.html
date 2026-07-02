@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grain Gradient Grid Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* --- UI Layout --- */
+        #sidebar {
+            width: 340px;
+            height: 100%;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            z-index: 10;
+        }
+
+        #viewport-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #050505;
+            position: relative;
+            padding: 20px;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .scroll-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: #444;
+        }
+
+        /* --- Minimalist BW Styling --- */
+        h1 {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            padding: 20px 15px;
+            border-bottom: 1px solid #333;
+            text-transform: uppercase;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            color: #888;
+            border-bottom: 1px dashed #222;
+            padding-bottom: 4px;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            color: #aaa;
+        }
+
+        .control-label span.val {
+            color: #fff;
+        }
+
+        /* --- Inputs & Buttons --- */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: #222;
+            height: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 0;
+        }
+
+        select, button {
+            background: #000;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            text-transform: uppercase;
+            width: 100%;
+            text-align: left;
+        }
+
+        select:hover, button:hover {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        .toggle-btn {
+            text-align: center;
+        }
+        .toggle-btn.active {
+            background: #fff;
+            color: #000;
+        }
+
+        /* --- Drag & Drop Zone --- */
+        #drop-zone {
+            border: 1px dashed #333;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+        }
+
+        #drop-zone:hover, #drop-zone.dragover {
+            border-color: #fff;
+        }
+
+        /* --- Canvas Container --- */
+        #canvas-wrapper {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            background: #000;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s ease-out;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        /* --- Color Layers Sorting --- */
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #111;
+            border: 1px solid #222;
+            padding: 6px;
+            margin-bottom: 4px;
+            cursor: grab;
+        }
+        .color-item:active { cursor: grabbing; }
+        .color-item input[type="color"] {
+            border: none;
+            background: transparent;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .color-item input[type="range"] {
+            flex: 1;
+        }
+
+        #recording-status {
+            color: #ff3333;
+            font-weight: bold;
+            animation: blink 1s infinite;
+            display: none;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>Grain Grid Studio</h1>
+        <div class="scroll-area">
+            
+            <div class="section">
+                <div class="section-title">Source Input</div>
+                <div id="drop-zone">DRAG & DROP IMAGE/VIDEO OR CLICK</div>
+                <input type="file" id="file-input" accept="image/*,video/*" style="display:none;">
+                <button id="webcam-btn" class="toggle-btn" style="margin-bottom:10px;">Toggle Webcam</button>
+                
+                <div class="control-group">
+                    <div class="control-label">Gamma <span class="val" id="v-gamma">1.0</span></div>
+                    <input type="range" id="p-gamma" min="0.2" max="3.0" step="0.05" value="1.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Shadows <span class="val" id="v-shadows">0.0</span></div>
+                    <input type="range" id="p-shadows" min="-0.5" max="0.5" step="0.01" value="0.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Midtones <span class="val" id="v-midtones">1.0</span></div>
+                    <input type="range" id="p-midtones" min="0.2" max="2.5" step="0.05" value="1.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Highlights <span class="val" id="v-highlights">1.0</span></div>
+                    <input type="range" id="p-highlights" min="0.5" max="2.0" step="0.05" value="1.0">
+                </div>
+                <button id="p-invert" class="toggle-btn">Invert Image: OFF</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Canvas & Aspect</div>
+                <div class="control-group" style="margin-bottom:8px;">
+                    <select id="p-aspect">
+                        <option value="16:9">Horizontal 16:9</option>
+                        <option value="2:1">Horizontal 2x1</option>
+                        <option value="3:2">Horizontal 3:2</option>
+                        <option value="4:3">Horizontal 4:3</option>
+                        <option value="1:1" selected>Square 1:1</option>
+                        <option value="9:16">Vertical 9:16</option>
+                        <option value="1:2">Vertical 1x2</option>
+                        <option value="2:3">Vertical 2x3</option>
+                        <option value="3:4">Vertical 3:4</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <div class="control-label">UI Scale <span class="val" id="v-scale">100%</span></div>
+                    <input type="range" id="p-scale" min="20" max="100" step="1" value="100">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Grid Structure</div>
+                <div class="control-group">
+                    <div class="control-label">Grid Bands <span class="val" id="v-bands">5</span></div>
+                    <input type="range" id="p-bands" min="1" max="30" step="1" value="5">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Line Rows Per Band <span class="val" id="v-rows">10</span></div>
+                    <input type="range" id="p-rows" min="2" max="100" step="1" value="10">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Size Scaling Pattern</div>
+                    <select id="p-dist">
+                        <option value="0">Uniform Size</option>
+                        <option value="1">Linear Decreasing (Top-Down)</option>
+                        <option value="2">Exponential Decreasing</option>
+                        <option value="3">Banded Sizing Alternation</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Band Gradient Angle <span class="val" id="v-angle">0°</span></div>
+                    <input type="range" id="p-angle" min="0" max="360" step="1" value="0">
+                </div>
+                <button id="p-rotate" class="toggle-btn">Rotate Grid 90°: OFF</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Animation</div>
+                <button id="anim-toggle" class="toggle-btn active" style="margin-bottom:8px;">Engine: PLAYING</button>
+                <div class="control-group">
+                    <div class="control-label">Gradient Speed <span class="val" id="v-speed">20</span></div>
+                    <input type="range" id="p-speed" min="0" max="100" step="1" value="20">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Grid Size Modulator</div>
+                    <select id="p-mod-type">
+                        <option value="0">Static / Off</option>
+                        <option value="1">Smooth Breathing Scale</option>
+                        <option value="2">Sine Wave Bounce</option>
+                        <option value="3">Intense Jitter Strobe</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button id="p-loop-grad" class="toggle-btn active">Loop Phase (0-100)</button>
+                    <button id="p-bounce-grad" class="toggle-btn">Bounce Phase (0-100-0)</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Color Mapping & Stepping</div>
+                <div class="control-group">
+                    <div class="control-label">Tone Stepping Blocks <span class="val" id="v-step">0</span></div>
+                    <input type="range" id="p-step" min="0" max="32" step="1" value="0">
+                </div>
+                <div class="control-group" style="margin-bottom: 5px;">
+                    <div class="control-label">Layers Order & Weights</div>
+                </div>
+                <div id="color-list">
+                    </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Export Engine</div>
+                <div class="btn-group" style="margin-bottom:5px;">
+                    <button id="exp-low">Render 1000px</button>
+                    <button id="exp-high">Render 3000px</button>
+                </div>
+                <button id="exp-video" style="background:#111; text-align:center;">Record Output (Start/Stop)</button>
+                <div id="recording-status">● RECORDING BUFFER ACTIVE</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="viewport-container">
+        <div id="canvas-wrapper">
+            <canvas id="glCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // --- Shaders ---
+        const vsSource = `#version 300 es
+            in vec2 position;
+            out vec2 vUv;
+            void main() {
+                vUv = position * 0.5 + 0.5;
+                vUv.y = 1.0 - vUv.y; // Match standard texture coordinates
+                gl_Position = vec4(position, 0.0, 1.0);
+            }
+        `;
+
+        const fsSource = `#version 300 es
+            precision highp float;
+            in vec2 vUv;
+            out vec4 fragColor;
+
+            uniform sampler2D u_texture;
+            uniform vec2 u_resolution;
+            uniform float u_time;
+            
+            // Source Parameters
+            uniform float u_gamma;
+            uniform float u_shadows;
+            uniform float u_midtones;
+            uniform float u_highlights;
+            uniform bool u_invert;
+
+            // Structural Parameters
+            uniform float u_bands;
+            uniform float u_rows;
+            uniform int u_dist;
+            uniform float u_angle;
+            uniform bool u_rotate;
+
+            // Color System
+            uniform int u_num_colors;
+            uniform vec3 u_colors[5];
+            uniform float u_weights[5];
+            uniform float u_stepping;
+
+            // Pseudo-random noise function for complex grain generation
+            float noise(vec2 st) {
+                return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+            }
+
+            void main() {
+                vec2 uv = vUv;
+                
+                // Read texture background safely
+                vec4 tex = texture(u_texture, uv);
+                vec3 srcColor = tex.rgb;
+
+                // Adjust Contrast Levels
+                srcColor = clamp(srcColor + u_shadows, 0.0, 1.0);
+                srcColor = pow(srcColor, vec3(u_gamma));
+                srcColor = pow(srcColor, vec3(1.0 / max(u_midtones, 0.01)));
+                srcColor = clamp(srcColor * u_highlights, 0.0, 1.0);
+
+                if(u_invert) {
+                    srcColor = 1.0 - srcColor;
+                }
+
+                // Compute overall brightness/luminance
+                float lum = dot(srcColor, vec3(0.299, 0.587, 0.114));
+
+                // Process Structural Coordinate Grid
+                vec2 gridUv = uv;
+                if(u_rotate) {
+                    gridUv = vec2(gridUv.y, gridUv.x);
+                }
+
+                // Incremental Size Calculations across Bands
+                float bandIndex = floor(gridUv.y * u_bands);
+                float bandNorm = bandIndex / max(u_bands - 1.0, 1.0);
+                
+                float sizeFactor = 1.0;
+                if (u_dist == 1) { // Linear Decreasing
+                    sizeFactor = 1.0 - (bandNorm * 0.85);
+                } else if (u_dist == 2) { // Exponential Decreasing
+                    sizeFactor = exp(-bandNorm * 2.5);
+                } else if (u_dist == 3) { // Banded Alternation
+                    sizeFactor = mod(bandIndex, 2.0) == 0.0 ? 1.0 : 0.35;
+                }
+
+                // Line row definitions within computed band space
+                float localY = fract(gridUv.y * u_bands);
+                float rowPattern = sin(localY * u_rows * 3.1415926 * sizeFactor + u_time * 2.0);
+                rowPattern = smoothstep(-0.2, 0.2, rowPattern);
+
+                // Inline Gradient Mapping Angles calculations
+                float rad = radians(u_angle);
+                mat2 rotMat = mat2(cos(rad), -sin(rad), sin(rad), cos(rad));
+                vec2 rotatedUv = rotMat * (uv - 0.5);
+                
+                // Combine luminance, structural pattern, and grain noise
+                float grain = noise(uv * u_resolution + vec2(u_time * 12.13));
+                float mixedValue = clamp(lum * 0.5 + (rowPattern * 0.3) + (grain * 0.2) + rotatedUv.x * 0.3, 0.0, 1.0);
+
+                // Gradient Phase Stepping Evaluation
+                if(u_stepping > 0.0) {
+                    mixedValue = floor(mixedValue * u_stepping) / (u_stepping - 1.0);
+                }
+
+                // Calculate multi-layer weight ranges
+                vec3 finalColor = u_colors[0];
+                float currentOffset = 0.0;
+                
+                // Normalizing multi-weights calculations dynamically
+                float totalW = 0.0;
+                for(int i = 0; i < u_num_colors; i++) { totalW += u_weights[i]; }
+
+                float accumulated = 0.0;
+                for(int i = 0; i < 4; i++) {
+                    if (i >= u_num_colors - 1) break;
+                    float w1 = u_weights[i] / totalW;
+                    float nextLimit = accumulated + w1;
+                    
+                    if(mixedValue >= accumulated && mixedValue <= nextLimit) {
+                        float t = (mixedValue - accumulated) / w1;
+                        finalColor = mix(u_colors[i], u_colors[i+1], t);
+                        break;
+                    }
+                    accumulated = nextLimit;
+                    finalColor = u_colors[i+1];
+                }
+
+                fragColor = vec4(finalColor, 1.0);
+            }
+        `;
+
+        // --- App Architecture ---
+        let gl, program;
+        let positionBuffer, vao;
+        let textureID = null;
+        let sourceElement = null; // Can be an image, video, or webcam stream element
+        let isVideo = false;
+        let isWebcam = false;
+        let webcamStream = null;
+
+        // Configuration State
+        const state = {
+            gamma: 1.0, shadows: 0.0, midtones: 1.0, highlights: 1.0, invert: false,
+            bands: 5, rows: 10, dist: 0, angle: 0, rotate: false,
+            playing: true, speed: 20, modType: 0, loopMode: 'loop', // 'loop' or 'bounce'
+            stepping: 0,
+            colors: [
+                { hex: '#000000', weight: 1.0 },
+                { hex: '#333333', weight: 1.0 },
+                { hex: '#888888', weight: 1.0 },
+                { hex: '#cccccc', weight: 1.0 },
+                { hex: '#ffffff', weight: 1.0 }
+            ],
+            aspect: '1:1', uiScale: 100,
+            time: 0, lastFrameTime: 0
+        };
+
+        // DOM Elements
+        const canvas = document.getElementById('glCanvas');
+        const wrapper = document.getElementById('canvas-wrapper');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        // Video Recording Architecture
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+
+        function initContext() {
+            gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
+            if (!gl) { alert('WebGL 2 required'); return; }
+
+            // Create Vertex Program
+            const vs = compileShader(gl.VERTEX_SHADER, vsSource);
+            const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+            program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(gl.getProgramInfoLog(program));
+            }
+
+            // Quadrilateral geometry array
+            const positions = new Float32Array([-1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1]);
+            positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+            vao = gl.createVertexArray();
+            gl.bindVertexArray(vao);
+            const posLoc = gl.getAttribLocation(program, 'position');
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+            // Create solid background default texture
+            createDefaultTexture();
+        }
+
+        function compileShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function createDefaultTexture() {
+            if(textureID) gl.deleteTexture(textureID);
+            textureID = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, textureID);
+            const data = new Uint8Array([32, 32, 32, 255]);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        }
+
+        function updateTextureSource(element) {
+            if(!textureID) textureID = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, textureID);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        }
+
+        // --- Layout Engines ---
+        function resizeCanvas() {
+            const parts = state.aspect.split(':');
+            const aspectW = parseFloat(parts[0]);
+            const aspectH = parseFloat(parts[1]);
+            const ratio = aspectW / aspectH;
+
+            const container = document.getElementById('viewport-container');
+            const maxW = container.clientWidth - 40;
+            const maxH = container.clientHeight - 40;
+
+            let targetW = maxW;
+            let targetH = maxW / ratio;
+
+            if (targetH > maxH) {
+                targetH = maxH;
+                targetW = maxH * ratio;
+            }
+
+            // Apply global internal layout sizing
+            wrapper.style.width = `${targetW}px`;
+            wrapper.style.height = `${targetH}px`;
+            wrapper.style.transform = `scale(${state.uiScale / 100})`;
+
+            // Set uniform operational sizes
+            canvas.width = targetW;
+            canvas.height = targetH;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Render Loops ---
+        function render(now) {
+            now *= 0.001; // Scale to seconds
+            const delta = now - state.lastFrameTime;
+            state.lastFrameTime = now;
+
+            if (state.playing) {
+                // Determine phase progression loops
+                let speedMod = state.speed * 0.1;
+                if (state.loopMode === 'bounce') {
+                    state.time += delta * speedMod;
+                } else {
+                    state.time += delta * speedMod;
+                }
+            }
+
+            // Stream dynamically updating media pipelines
+            if ((isVideo || isWebcam) && sourceElement) {
+                if (sourceElement.readyState >= sourceElement.HAVE_CURRENT_DATA) {
+                    updateTextureSource(sourceElement);
+                }
+            }
+
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.useProgram(program);
+
+            // Set Source Uniform Configurations
+            gl.uniform1f(gl.getUniformLocation(program, "u_gamma"), state.gamma);
+            gl.uniform1f(gl.getUniformLocation(program, "u_shadows"), state.shadows);
+            gl.uniform1f(gl.getUniformLocation(program, "u_midtones"), state.midtones);
+            gl.uniform1f(gl.getUniformLocation(program, "u_highlights"), state.highlights);
+            gl.uniform1i(gl.getUniformLocation(program, "u_invert"), state.invert ? 1 : 0);
+
+            // Compute Size Modulations options
+            let dynamicBands = state.bands;
+            let calculatedTime = state.time;
+            
+            if (state.loopMode === 'bounce') {
+                calculatedTime = (Math.sin(state.time) * 0.5 + 0.5) * 10.0;
+            }
+
+            if(state.modType === 1) { // Smooth Breathing Scale
+                dynamicBands += Math.sin(state.time * 2.0) * (state.bands * 0.3);
+            } else if (state.modType === 2) { // Sine Wave Bounce
+                dynamicBands += Math.abs(Math.sin(state.time * 4.0)) * (state.bands * 0.5);
+            } else if (state.modType === 3) { // Intense Jitter Strobe
+                dynamicBands += (Math.random() - 0.5) * (state.bands * 0.4);
+            }
+
+            gl.uniform1f(gl.getUniformLocation(program, "u_bands"), dynamicBands);
+            gl.uniform1f(gl.getUniformLocation(program, "u_rows"), state.rows);
+            gl.uniform1i(gl.getUniformLocation(program, "u_dist"), state.dist);
+            gl.uniform1f(gl.getUniformLocation(program, "u_angle"), state.angle);
+            gl.uniform1i(gl.getUniformLocation(program, "u_rotate"), state.rotate ? 1 : 0);
+            gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), canvas.width, canvas.height);
+            gl.uniform1f(gl.getUniformLocation(program, "u_time"), calculatedTime);
+            gl.uniform1f(gl.getUniformLocation(program, "u_stepping"), state.stepping > 0 ? state.stepping : 0.0);
+
+            // Construct Uniform Array vectors for mapped layers
+            gl.uniform1i(gl.getUniformLocation(program, "u_num_colors"), state.colors.length);
+
+            const colorsFlat = [];
+            const weightsFlat = [];
+            state.colors.forEach(c => {
+                const rgb = hexToRgb(c.hex);
+                colorsFlat.push(rgb.r, rgb.g, rgb.b);
+                weightsFlat.push(c.weight);
+            });
+
+            gl.uniform3fv(gl.getUniformLocation(program, "u_colors"), new Float32Array(colorsFlat));
+            gl.uniform1fv(gl.getUniformLocation(program, "u_weights"), new Float32Array(weightsFlat));
+
+            gl.bindVertexArray(vao);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            requestAnimationFrame(render);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16) / 255,
+                g: parseInt(result[2], 16) / 255,
+                b: parseInt(result[3], 16) / 255
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        // --- Core UI Processing Engines ---
+        function generateColorListUI() {
+            const container = document.getElementById('color-list');
+            container.innerHTML = '';
+            state.colors.forEach((col, idx) => {
+                const row = document.createElement('div');
+                row.className = 'color-item';
+                row.draggable = true;
+                row.dataset.index = idx;
+
+                row.innerHTML = `
+                    <span style="width:12px; color:#555;">☰</span>
+                    <input type="color" value="${col.hex}">
+                    <input type="range" min="0.1" max="5.0" step="0.1" value="${col.weight}">
+                `;
+
+                // Wire Layer updates events inline
+                row.querySelector('input[type="color"]').addEventListener('input', (e) => {
+                    state.colors[idx].hex = e.target.value;
+                });
+                row.querySelector('input[type="range"]').addEventListener('input', (e) => {
+                    state.colors[idx].weight = parseFloat(e.target.value);
+                });
+
+                // Drag & Drop Sorting Mechanics Architecture
+                row.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', idx);
+                    row.style.opacity = '0.4';
+                });
+                row.addEventListener('dragend', () => row.style.opacity = '1');
+                row.addEventListener('dragover', (e) => e.preventDefault());
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIdx = idx;
+                    if(fromIdx !== toIdx) {
+                        const targetItem = state.colors.splice(fromIdx, 1)[0];
+                        state.colors.splice(toIdx, 0, targetItem);
+                        generateColorListUI();
+                    }
+                });
+
+                container.appendChild(row);
+            });
+        }
+
+        // --- Pipeline Inputs Integrations ---
+        function processFile(file) {
+            if(!file) return;
+            const url = URL.createObjectURL(file);
+            
+            // Clean active elements contexts
+            if(webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                isWebcam = false;
+                document.getElementById('webcam-btn').classList.remove('active');
+            }
+
+            if(file.type.startsWith('image/')) {
+                isVideo = false;
+                const img = new Image();
+                img.onload = function() {
+                    sourceElement = img;
+                    updateTextureSource(img);
+                    dropZone.innerText = `IMAGE: ${file.name.toUpperCase()}`;
+                };
+                img.src = url;
+            } else if(file.type.startsWith('video/')) {
+                isVideo = true;
+                const video = document.createElement('video');
+                video.src = url;
+                video.autoplay = true;
+                video.loop = true;
+                video.muted = true;
+                video.play();
+                video.onloadeddata = function() {
+                    sourceElement = video;
+                    dropZone.innerText = `VIDEO: ${file.name.toUpperCase()}`;
+                };
+            }
+        }
+
+        // --- Interface Bindings Setup ---
+        function initInterface() {
+            // Drag Drop Zones wireframe setup
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
+            
+            window.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            window.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if(e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
+            });
+
+            // Webcam Capture Hooks Configuration
+            document.getElementById('webcam-btn').addEventListener('click', async function() {
+                if(isWebcam) {
+                    if(webcamStream) webcamStream.getTracks().forEach(track => track.stop());
+                    isWebcam = false;
+                    this.classList.remove('active');
+                    createDefaultTexture();
+                    dropZone.innerText = "DRAG & DROP IMAGE/VIDEO OR CLICK";
+                } else {
+                    try {
+                        webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        const video = document.createElement('video');
+                        video.srcObject = webcamStream;
+                        video.autoplay = true;
+                        video.play();
+                        video.onloadeddata = () => {
+                            sourceElement = video;
+                            isWebcam = true;
+                            isVideo = false;
+                            this.classList.add('active');
+                            dropZone.innerText = "WEBCAM ACTIVE PIPELINE";
+                        };
+                    } catch(err) {
+                        alert("Webcam connection failed access requests.");
+                    }
+                }
+            });
+
+            // Sliders Matrix Controls Mapping Loops
+            const bindings = [
+                { id: 'p-gamma', var: 'gamma', label: 'v-gamma' },
+                { id: 'p-shadows', var: 'shadows', label: 'v-shadows' },
+                { id: 'p-midtones', var: 'midtones', label: 'v-midtones' },
+                { id: 'p-highlights', var: 'highlights', label: 'v-highlights' },
+                { id: 'p-bands', var: 'bands', label: 'v-bands' },
+                { id: 'p-rows', var: 'rows', label: 'v-rows' },
+                { id: 'p-angle', var: 'angle', label: 'v-angle', suffix: '°' },
+                { id: 'p-speed', var: 'speed', label: 'v-speed' },
+                { id: 'p-step', var: 'stepping', label: 'v-step' }
+            ];
+
+            bindings.forEach(b => {
+                const el = document.getElementById(b.id);
+                const lbl = document.getElementById(b.label);
+                el.addEventListener('input', (e) => {
+                    state[b.var] = parseFloat(e.target.value);
+                    lbl.innerText = state[b.var] + (b.suffix || '');
+                });
+            });
+
+            // Toggle Actions Setup
+            document.getElementById('p-invert').addEventListener('click', function() {
+                state.invert = !state.invert;
+                this.classList.toggle('active', state.invert);
+                this.innerText = `Invert Image: ${state.invert ? 'ON' : 'OFF'}`;
+            });
+
+            document.getElementById('p-rotate').addEventListener('click', function() {
+                state.rotate = !state.rotate;
+                this.classList.toggle('active', state.rotate);
+                this.innerText = `Rotate Grid 90°: ${state.rotate ? 'ON' : 'OFF'}`;
+            });
+
+            document.getElementById('anim-toggle').addEventListener('click', function() {
+                state.playing = !state.playing;
+                this.classList.toggle('active', state.playing);
+                this.innerText = `Engine: ${state.playing ? 'PLAYING' : 'PAUSED'}`;
+            });
+
+            // Selection Arrays Switches Mapping 
+            document.getElementById('p-dist').addEventListener('change', (e) => {
+                state.dist = parseInt(e.target.value);
+            });
+            document.getElementById('p-mod-type').addEventListener('change', (e) => {
+                state.modType = parseInt(e.target.value);
+            });
+            document.getElementById('p-aspect').addEventListener('change', (e) => {
+                state.aspect = e.target.value;
+                resizeCanvas();
+            });
+
+            document.getElementById('p-scale').addEventListener('input', (e) => {
+                state.uiScale = parseInt(e.target.value);
+                document.getElementById('v-scale').innerText = `${state.uiScale}%`;
+                resizeCanvas();
+            });
+
+            // Phase looping configuration styles
+            const loopBtn = document.getElementById('p-loop-grad');
+            const bounceBtn = document.getElementById('p-bounce-grad');
+            loopBtn.addEventListener('click', () => {
+                state.loopMode = 'loop';
+                loopBtn.classList.add('active');
+                bounceBtn.classList.remove('active');
+            });
+            bounceBtn.addEventListener('click', () => {
+                state.loopMode = 'bounce';
+                bounceBtn.classList.add('active');
+                loopBtn.classList.remove('active');
+            });
+
+            // --- Export Triggers Subroutines ---
+            document.getElementById('exp-low').addEventListener('click', () => captureFrame(1000));
+            document.getElementById('exp-high').addEventListener('click', () => captureFrame(3000));
+            document.getElementById('exp-video').addEventListener('click', toggleVideoRecording);
+
+            generateColorListUI();
+        }
+
+        // --- Frame Extraction Engine ---
+        function captureFrame(size) {
+            // Cache working sizing metrics
+            const prevW = canvas.width;
+            const prevH = canvas.height;
+
+            const parts = state.aspect.split(':');
+            const aspectW = parseFloat(parts[0]);
+            const aspectH = parseFloat(parts[1]);
+            const ratio = aspectW / aspectH;
+
+            let targetW = size;
+            let targetH = size / ratio;
+            if(ratio < 1.0) {
+                targetH = size;
+                targetW = size * ratio;
+            }
+
+            // Force high precision internal operational matrices sizing
+            canvas.width = targetW;
+            canvas.height = targetH;
+            gl.viewport(0, 0, targetW, targetH);
+
+            // Synchronous instant layout draw pass executed manually
+            render(performance.now());
+
+            // Extract blob
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `grain_grid_${size}px.png`;
+            link.href = dataUrl;
+            link.click();
+
+            // Revert layout configurations safely
+            canvas.width = prevW;
+            canvas.height = prevH;
+            gl.viewport(0, 0, prevW, prevH);
+        }
+
+        // --- Media Stream Video Recorder ---
+        function toggleVideoRecording() {
+            const btn = document.getElementById('exp-video');
+            const statusIndicator = document.getElementById('recording-status');
+            
+            if (isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.innerText = "Record Output (Start/Stop)";
+                btn.style.background = "#111";
+                statusIndicator.style.display = "none";
+            } else {
+                recordedChunks = [];
+                const stream = canvas.captureStream(30); // 30 FPS high-performance stream
+                
+                // Select matching codec profiles
+                let options = { mimeType: 'video/webm;codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm;codecs=vp8' };
+                }
+
+                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `grain_grid_capture.webm`;
+                    link.href = url;
+                    link.click();
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.innerText = "STOP RECORDING";
+                btn.style.background = "#550000";
+                statusIndicator.style.display = "block";
+            }
+        }
+
+        // Initialize Application
+        window.onload = () => {
+            initContext();
+            initInterface();
+            resizeCanvas();
+            requestAnimationFrame(render);
+        };
+    </script>
+</body>
+</html>
