@@ -3,223 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grain Grid // Creative Shader Terminal</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twgl.js/4.19.2/twgl-full.min.js"></script>
+    <title>Advanced Vintage Pipeline & Texture Studio</title>
     <style>
-        :root {
-            --bg-primary: #08080b;
-            --bg-sidebar: #0f0f14;
-            --bg-control: #171722;
-            --accent: #00ffaa;
-            --accent-active: #ff0055;
-            --text-main: #e2e2e9;
-            --text-muted: #7c7c8c;
-            --border: #222232;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
         }
 
         body {
-            background-color: var(--bg-primary);
-            color: var(--text-main);
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            overflow: hidden;
             height: 100vh;
             display: flex;
-            overflow: hidden;
         }
 
-        .app-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Sidebar Control Center Panel */
-        .sidebar {
+        /* --- Interface Framework --- */
+        #sidebar {
             width: 360px;
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
+            height: 100%;
+            border-right: 1px solid #222;
             display: flex;
             flex-direction: column;
+            background: #000;
             z-index: 10;
+        }
+
+        #viewport-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0a0a0a;
+            position: relative;
+            padding: 30px;
+        }
+
+        .scroll-area {
+            flex: 1;
             overflow-y: auto;
+            padding: 20px 15px;
         }
 
-        .sidebar-header {
-            padding: 24px;
-            border-bottom: 1px solid var(--border);
+        .scroll-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: #333;
         }
 
-        .sidebar-header h1 {
-            font-size: 1.3rem;
-            font-weight: 700;
+        h1 {
+            font-size: 13px;
+            font-weight: bold;
             letter-spacing: 2px;
+            padding: 20px 15px;
+            border-bottom: 1px solid #222;
             text-transform: uppercase;
-            color: #fff;
-            margin-bottom: 4px;
+            text-align: center;
         }
 
-        .sidebar-header p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .control-section {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
+        .section {
+            margin-bottom: 28px;
         }
 
         .section-title {
-            font-size: 0.8rem;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: var(--accent);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            color: #666;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 4px;
         }
 
         .control-group {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
         }
 
-        label {
+        .control-label {
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
-            margin-bottom: 6px;
-            color: var(--text-muted);
+            margin-bottom: 5px;
+            color: #888;
+            text-transform: uppercase;
         }
 
-        .control-value {
-            color: var(--text-main);
+        .control-label span.val {
+            color: #fff;
         }
 
-        /* Dropdown Style */
-        select {
-            width: 100%;
-            background: var(--bg-control);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 10px;
-            font-size: 0.8rem;
-            outline: none;
+        /* --- Expanded Texture Grid Matrix --- */
+        .texture-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .texture-option {
+            border: 1px solid #222;
+            background: #0a0a0a;
+            color: #555;
+            padding: 8px 2px;
+            text-align: center;
             cursor: pointer;
-            border-radius: 4px;
+            text-transform: uppercase;
+            font-size: 8.5px;
+            font-weight: bold;
+            transition: all 0.2s ease;
         }
 
+        .texture-option:hover {
+            border-color: #555;
+            color: #aaa;
+        }
+
+        .texture-option.active {
+            border-color: #fff;
+            background: #fff;
+            color: #000;
+        }
+
+        /* --- Sleek Custom Inputs --- */
         input[type="range"] {
-            width: 100%;
             -webkit-appearance: none;
-            background: var(--bg-control);
-            height: 6px;
-            border-radius: 3px;
+            width: 100%;
+            background: #151515;
+            height: 2px;
             outline: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--accent);
+            width: 8px;
+            height: 12px;
+            background: #fff;
             cursor: pointer;
         }
 
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .color-picker-wrapper {
-            background: var(--bg-control);
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .color-picker-wrapper input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            background: transparent;
-        }
-
-        .file-upload-btn {
-            display: block;
+        input[type="number"] {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            color: #fff;
+            font-family: inherit;
+            padding: 6px;
+            font-size: 11px;
+            outline: none;
             text-align: center;
-            background: var(--bg-control);
-            border: 1px dashed var(--border);
-            padding: 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s ease;
+            width: 100%;
+        }
+        input[type="number"]:focus {
+            border-color: #555;
         }
 
-        .file-upload-btn:hover {
-            border-color: var(--accent);
+        select, button {
+            background: #000;
+            border: 1px solid #222;
+            color: #fff;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            text-transform: uppercase;
+            width: 100%;
+            text-align: left;
+        }
+
+        select:hover, button:hover {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .toggle-btn {
+            text-align: center;
+        }
+        .toggle-btn.active {
+            background: #fff;
+            color: #000;
+        }
+
+        #drop-zone {
+            border: 1px dashed #222;
+            padding: 25px 10px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 12px;
+            color: #666;
+        }
+        #drop-zone:hover {
+            border-color: #fff;
             color: #fff;
         }
 
-        input[type="file"] {
-            display: none;
-        }
-
-        .btn {
-            width: 100%;
-            background: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            padding: 12px;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            margin-bottom: 12px;
-        }
-
-        .btn:hover {
-            background: var(--accent);
-            color: var(--bg-primary);
-            box-shadow: 0 0 12px rgba(0, 255, 170, 0.3);
-        }
-
-        .btn-record.recording {
-            border-color: var(--accent-active);
-            color: var(--accent-active);
-            animation: pulse 1.5s infinite;
-        }
-
-        /* Screen Interactive Viewport Workspace */
-        .main-workspace {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-image: radial-gradient(var(--border) 1px, transparent 1px);
-            background-size: 20px 20px;
-            padding: 40px;
-        }
-
-        .canvas-wrapper {
+        #canvas-wrapper {
             position: relative;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
-            border: 1px solid var(--border);
-            max-width: 100%;
-            max-height: 100%;
-            aspect-ratio: 1 / 1; /* Locked perfectly square for artwork normalization */
-            width: 550px;
+            background: #000;
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
         }
 
         canvas {
@@ -228,412 +221,453 @@
             display: block;
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+        #rec-status {
+            color: #ff3333;
+            font-weight: bold;
+            animation: blink 1s infinite;
+            display: none;
+            text-align: center;
+            margin-top: 8px;
+            letter-spacing: 1px;
         }
-
-        @media (max-width: 900px) {
-            body { flex-direction: column; overflow: auto; }
-            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-            .main-workspace { height: 60vh; padding: 16px; }
-        }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h1>Grain Grid</h1>
-                <p>GPU Material Processing Studio v3.0</p>
+    <div id="sidebar">
+        <h1>Vintage Pipeline Pro</h1>
+        <div class="scroll-area">
+            
+            <div class="section">
+                <div class="section-title">1. Source Input</div>
+                <div id="drop-zone">DROP IMAGE / VIDEO HERE</div>
+                <input type="file" id="file-input" accept="image/*,video/*" style="display:none;">
+                <button id="webcam-btn" class="toggle-btn">Toggle Live Webcam</button>
             </div>
 
-            <div class="control-section">
-                <div class="section-title">01 // Graphic Matrix Input</div>
-                <label class="file-upload-btn" id="upload-label">
-                    LOAD IMAGE LAYER
-                    <input type="file" id="image-loader" accept="image/*">
-                </label>
-            </div>
-
-            <div class="control-section">
-                <div class="section-title">02 // Engine Texture Mode</div>
+            <div class="section">
+                <div class="section-title">2. Contrast & Tone</div>
                 <div class="control-group">
-                    <select id="param-textureMode">
-                        <option value="0">Film Grain & Fluid Noise</option>
-                        <option value="1">Vintage Halftone Screen</option>
-                        <option value="2">Xerox Photocopy Scan</option>
-                        <option value="3">Coarse Ink Stamp Bleed</option>
+                    <div class="control-label">Gamma <span class="val" id="v-gamma">1.0</span></div>
+                    <input type="range" id="p-gamma" min="0.3" max="2.5" step="0.05" value="1.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Shadows <span class="val" id="v-shadows">0.0</span></div>
+                    <input type="range" id="p-shadows" min="-0.4" max="0.4" step="0.01" value="0.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Midtones <span class="val" id="v-midtones">1.0</span></div>
+                    <input type="range" id="p-midtones" min="0.3" max="2.2" step="0.05" value="1.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Highlights <span class="val" id="v-highlights">1.0</span></div>
+                    <input type="range" id="p-highlights" min="0.5" max="2.0" step="0.05" value="1.0">
+                </div>
+                <button id="p-invert" class="toggle-btn">Inverting Pipeline: OFF</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">3. Master Texture Grid</div>
+                <div class="texture-grid">
+                    <div class="texture-option active" data-value="0">None</div>
+                    <div class="texture-option" data-value="1">Parchment</div>
+                    <div class="texture-option" data-value="2">Kraft Paper</div>
+                    <div class="texture-option" data-value="3">Canvas Thread</div>
+                    <div class="texture-option" data-value="4">Film Base</div>
+                    <div class="texture-option" data-value="5">Industrial Grunge</div>
+                    <div class="texture-option" data-value="6">Emulsion Crack</div>
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Texture Opacity <span class="val" id="v-tex-opacity">0.35</span></div>
+                    <input type="range" id="p-tex-opacity" min="0.0" max="1.0" step="0.02" value="0.35">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Texture Contrast <span class="val" id="v-tex-contrast">1.0</span></div>
+                    <input type="range" id="p-tex-contrast" min="0.2" max="2.5" step="0.05" value="1.0">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">4. Grain & Damage</div>
+                <div class="control-group">
+                    <div class="control-label">Film Grain <span class="val" id="v-grain">0.25</span></div>
+                    <input type="range" id="p-grain" min="0.0" max="1.0" step="0.02" value="0.25">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Dust Density <span class="val" id="v-dust">0.15</span></div>
+                    <input type="range" id="p-dust" min="0.0" max="1.0" step="0.01" value="0.15">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Hair Scratches <span class="val" id="v-scratches">0.20</span></div>
+                    <input type="range" id="p-scratches" min="0.0" max="1.0" step="0.02" value="0.20">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">5. Weathering & Decay</div>
+                <div class="control-group">
+                    <div class="control-label">Vignette Edge Wear <span class="val" id="v-edge-wear">0.40</span></div>
+                    <input type="range" id="p-edge-wear" min="0.0" max="1.5" step="0.02" value="0.40">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Emulsion Bleach <span class="val" id="v-emulsion">0.0</span></div>
+                    <input type="range" id="p-emulsion" min="0.0" max="1.0" step="0.02" value="0.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Light Burn Shifts <span class="val" id="v-burn">0.10</span></div>
+                    <input type="range" id="p-burn" min="0.0" max="1.0" step="0.02" value="0.10">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">6. Chromatic Age Grade</div>
+                <div class="control-group">
+                    <div class="control-label">Sepia Saturation <span class="val" id="v-sepia">0.65</span></div>
+                    <input type="range" id="p-sepia" min="0.0" max="1.0" step="0.02" value="0.65">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Color Bleed Fade <span class="val" id="v-fade">0.30</span></div>
+                    <input type="range" id="p-fade" min="0.0" max="1.0" step="0.02" value="0.30">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">7. Temporal Engine</div>
+                <div class="control-group">
+                    <select id="p-anim-type">
+                        <option value="1">Dynamic Fluctuations</option>
+                        <option value="2">Jitter Strobe Stutter</option>
+                        <option value="0">Static Freeze-Frame</option>
                     </select>
                 </div>
+                <div class="control-group">
+                    <div class="control-label">Simulation Speed <span class="val" id="v-speed">30</span></div>
+                    <input type="range" id="p-speed" min="0" max="100" step="2" value="30">
+                </div>
             </div>
 
-            <div class="control-section">
-                <div class="section-title">03 // Texture & Deformation</div>
+            <div class="section">
+                <div class="section-title">8. Production Still Export</div>
+                <div class="control-group">
+                    <div class="control-label">Target Width (Pixels)</div>
+                    <input type="number" id="p-target-res" value="4096" min="500" max="8192" step="1">
+                </div>
+                <button id="exp-still-custom" style="text-align:center; background:#111; font-weight:bold; border-color:#444; margin-bottom:12px;">
+                    EXPORT HIGH-RES STILL (PNG)
+                </button>
                 
-                <div class="control-group">
-                    <label>Grain Frequency <span class="control-value" id="val-grainFreq">3.0</span></label>
-                    <input type="range" id="param-grainFreq" min="0.5" max="25.0" step="0.1" value="3.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Deform Intensity <span class="control-value" id="val-deform">1.0</span></label>
-                    <input type="range" id="param-deform" min="0.0" max="5.0" step="0.1" value="1.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Imprint Scale <span class="control-value" id="val-radius">0.35</span></label>
-                    <input type="range" id="param-radius" min="0.05" max="1.0" step="0.01" value="0.35">
-                </div>
+                <div class="section-title" style="margin-top:15px; font-size:9px;">Video Sequence Capture</div>
+                <button id="exp-video" style="background:#0a0a0a; text-align:center;">Record WebM Video Output</button>
+                <div id="rec-status">● DISK ENCODER STREAMING RUNTIME</div>
             </div>
 
-            <div class="control-section">
-                <div class="section-title">04 // Quad-Chroma Ramp</div>
-                <div class="color-grid">
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="color1" value="#040406">
-                        <span style="font-size:0.7rem;">Map A</span>
-                    </div>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="color2" value="#120a21">
-                        <span style="font-size:0.7rem;">Map B</span>
-                    </div>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="color3" value="#00ffaa">
-                        <span style="font-size:0.7rem;">Map C</span>
-                    </div>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="color4" value="#ffffff">
-                        <span style="font-size:0.7rem;">Map D</span>
-                    </div>
-                </div>
-            </div>
+        </div>
+    </div>
 
-            <div class="control-section" style="margin-top:auto; border-bottom:none;">
-                <div class="section-title">05 // Terminal Output Exfiltration</div>
-                <button class="btn" id="btn-snapshot">Capture High-Res 4K PNG</button>
-                <button class="btn btn-record" id="btn-record">Start Video Recording</button>
-            </div>
-        </aside>
-
-        <main class="main-workspace">
-            <div class="canvas-wrapper">
-                <canvas id="gl-canvas"></canvas>
-            </div>
-        </main>
+    <div id="viewport-container">
+        <div id="canvas-wrapper">
+            <canvas id="glCanvas"></canvas>
+        </div>
     </div>
 
     <script>
         const vsSource = `#version 300 es
-        in vec2 position;
-        out vec2 v_uv;
-        void main() {
-            v_uv = position * 0.5 + 0.5;
-            v_uv.y = 1.0 - v_uv.y; 
-            gl_Position = vec4(position, 0.0, 1.0);
-        }`;
+            in vec2 position;
+            out vec2 vUv;
+            void main() {
+                vUv = position * 0.5 + 0.5;
+                vUv.y = 1.0 - vUv.y;
+                gl_Position = vec4(position, 0.0, 1.0);
+            }
+        `;
 
         const fsSource = `#version 300 es
-        precision highp float;
-        in vec2 v_uv;
-        out vec4 fragColor;
+            precision highp float;
+            in vec2 vUv;
+            out vec4 fragColor;
 
-        uniform vec2 u_resolution;
-        uniform vec2 u_mouse;
-        uniform float u_time;
-        uniform sampler2D u_texture;
-        
-        uniform int u_textureMode;
-        uniform float u_grainFreq;
-        uniform float u_deform;
-        uniform float u_radius;
-        
-        uniform vec3 u_color1;
-        uniform vec3 u_color2;
-        uniform vec3 u_color3;
-        uniform vec3 u_color4;
+            uniform sampler2D u_texture;
+            uniform vec2 u_resolution;
+            uniform float u_time;
 
-        float hash21(vec2 p) {
-            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-        }
+            uniform float u_gamma;
+            uniform float u_shadows;
+            uniform float u_midtones;
+            uniform float u_highlights;
+            uniform bool u_invert;
 
-        float noise(vec2 p) {
-            vec2 i = floor(p);
-            vec2 f = fract(p);
-            vec2 u = f * f * (3.0 - 2.0 * f);
-            return mix(mix(hash21(i + vec2(0.0,0.0)), hash21(i + vec2(1.0,0.0)), u.x),
-                       mix(hash21(i + vec2(0.0,1.0)), hash21(i + vec2(1.0,1.0)), u.x), u.y);
-        }
+            uniform int u_tex_type;
+            uniform float u_tex_opacity;
+            uniform float u_tex_contrast;
 
-        float fbm(vec2 p) {
-            float v = 0.0; float am = 0.5;
-            for (int i = 0; i < 4; i++) {
-                v += noise(p) * am; p *= 2.0; am *= 0.5;
-            }
-            return v;
-        }
+            uniform float u_grain;
+            uniform float u_dust;
+            uniform float u_scratches;
 
-        void main() {
-            vec2 normMouse = u_mouse;
-            float mouseDist = distance(v_uv, normMouse);
-            float interactiveImprint = smoothstep(u_radius, 0.0, mouseDist);
-            
-            // Real-time multi-octave coordinates deformation 
-            vec2 deformUV = v_uv;
-            float nX = fbm(v_uv * 4.0 + vec2(u_time * 0.2));
-            float nY = fbm(v_uv * 4.0 - vec2(u_time * 0.2));
-            deformUV += vec2(nX - 0.5, nY - 0.5) * (u_deform * 0.03 + interactiveImprint * 0.08);
-            deformUV = clamp(deformUV, 0.0, 1.0);
+            uniform float u_edge_wear;
+            uniform float u_emulsion;
+            uniform float u_burn;
 
-            vec4 texColor = texture(u_texture, deformUV);
-            float luminance = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+            uniform float u_sepia;
+            uniform float u_fade;
 
-            // Output Value Modifiers Matrix Architecture
-            float calculatedValue = luminance;
-
-            if (u_textureMode == 0) {
-                // --- ENGINE 01: Film Grain & Fluid Noise ---
-                float grain = hash21(v_uv * u_grainFreq * 200.0 + vec2(u_time * 0.01));
-                calculatedValue = mix(luminance, grain, 0.18);
-            } 
-            else if (u_textureMode == 1) {
-                // --- ENGINE 02: Vintage Halftone Screen ---
-                vec2 halftonePos = gl_FragCoord.xy * (u_grainFreq * 0.03);
-                float dotMatrix = sin(halftonePos.x) * sin(halftonePos.y) * 0.5 + 0.5;
-                calculatedValue = smoothstep(0.4, 0.6, luminance * dotMatrix * 1.5);
-            } 
-            else if (u_textureMode == 2) {
-                // --- ENGINE 03: Xerox Photocopy Scan ---
-                float scanline = sin(v_uv.y * u_grainFreq * 50.0 + u_time) * 0.1;
-                float microGrit = hash21(v_uv * 800.0) * 0.25;
-                float rawPhotocopy = luminance + scanline + microGrit;
-                calculatedValue = smoothstep(0.35, 0.65, rawPhotocopy);
-            } 
-            else if (u_textureMode == 3) {
-                // --- ENGINE 04: Coarse Ink Stamp Bleed ---
-                float stampNoise = fbm(v_uv * u_grainFreq * 5.0) * 0.35;
-                float totalBleed = luminance + stampNoise - (interactiveImprint * 0.15);
-                calculatedValue = smoothstep(0.45, 0.55, totalBleed);
+            float hash(vec2 p) {
+                return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
             }
 
-            calculatedValue = clamp(calculatedValue, 0.0, 1.0);
-
-            // Quad-Chroma Gradient System Matrix Pipeline Mapping
-            vec3 finalRampColor;
-            if(calculatedValue < 0.33) {
-                finalRampColor = mix(u_color1, u_color2, smoothstep(0.0, 0.33, calculatedValue));
-            } else if(calculatedValue < 0.66) {
-                finalRampColor = mix(u_color2, u_color3, smoothstep(0.33, 0.66, calculatedValue));
-            } else {
-                finalRampColor = mix(u_color3, u_color4, smoothstep(0.66, 1.0, calculatedValue));
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                vec2 u = f*f*(3.0-2.0*f);
+                return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                           mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
             }
 
-            // Injected active highlights feedback based on user location maps
-            finalRampColor = mix(finalRampColor, u_color4 * 1.15, interactiveImprint * 0.12);
+            float fbm(vec2 p) {
+                float v = 0.0;
+                float a = 0.5;
+                vec2 shift = vec2(100.0);
+                mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
+                for (int i = 0; i < 4; ++i) {
+                    v += a * noise(p);
+                    p = rot * p * 2.0 + shift;
+                    a *= 0.5;
+                }
+                return v;
+            }
 
-            fragColor = vec4(finalRampColor, 1.0);
-        }
+            void main() {
+                vec2 uv = vUv;
+                vec4 texSample = texture(u_texture, uv);
+                vec3 color = texSample.rgb;
+
+                // 1. Color/Contrast Correction Block
+                color = clamp(color + u_shadows, 0.0, 1.0);
+                color = pow(color, vec3(u_gamma));
+                color = pow(color, vec3(1.0 / max(u_midtones, 0.01)));
+                color = clamp(color * u_highlights, 0.0, 1.0);
+
+                if(u_invert) color = 1.0 - color;
+
+                // 2. Procedural Texture Matrix Core
+                float texPattern = 1.0;
+                
+                if (u_tex_type == 1) { // Parchment
+                    texPattern = fbm(uv * 7.5) * 0.7 + noise(uv * 130.0) * 0.3;
+                } else if (u_tex_type == 2) { // Kraft Paper Fibers
+                    float fiberNetwork = step(0.97, hash(uv * vec2(180.0, 4.0))) * 0.4;
+                    texPattern = (fbm(uv * 30.0) * 0.75 + fiberNetwork * 0.25);
+                } else if (u_tex_type == 3) { // Canvas Interlaced Threading
+                    float weave = sin(uv.x * u_resolution.x * 0.45) * sin(uv.y * u_resolution.y * 0.45);
+                    texPattern = 0.82 + (weave * 0.18) + fbm(uv * 12.0) * 0.04;
+                } else if (u_tex_type == 4) { // Acetate Film Base Nitration
+                    float continuousLines = sin(uv.y * 80.0 + fbm(uv * 3.0) * 5.0);
+                    texPattern = 0.9 + (continuousLines * 0.1) * noise(uv * 40.0);
+                } else if (u_tex_type == 5) { // Industrial Environmental Grunge
+                    float largeBlotches = fbm(uv * 2.2);
+                    float microPitting = noise(uv * u_resolution.xy * 0.2);
+                    texPattern = (largeBlotches * 0.65) * (0.4 + microPitting * 0.6);
+                } else if (u_tex_type == 6) { // Emulsion Fracture Crackle
+                    float primaryFractures = abs(sin(fbm(uv * 9.0) * 8.0));
+                    texPattern = smoothstep(0.08, 0.35, primaryFractures);
+                }
+
+                texPattern = mix(1.0, texPattern * u_tex_contrast, u_tex_opacity);
+                color *= texPattern;
+
+                // Apply unique natural base chemical tints
+                if (u_tex_type == 2) color *= vec3(0.93, 0.84, 0.72); // Raw Kraft Paper Brown
+                if (u_tex_type == 5) color *= vec3(0.88, 0.89, 0.84); // Industrial Oxidized Dust Base
+
+                // 3. Dynamic Organic Damage Generative Blocks
+                float rawGrain = hash(uv + vec2(sin(u_time * 1.32), cos(u_time * 0.76)));
+                color = mix(color, color * (0.45 + 1.1 * rawGrain), u_grain * 0.45);
+
+                if(u_dust > 0.0) {
+                    vec2 dUv = floor(uv * vec2(160.0, 160.0) + hash(vec2(floor(u_time * 11.5))));
+                    if(hash(dUv) > (1.0 - (u_dust * 0.016))) {
+                        color = (hash(dUv + 3.1) > 0.45) ? vec3(0.05) : vec3(0.96);
+                    }
+                }
+
+                if(u_scratches > 0.0) {
+                    for(int i=0; i<2; i++) {
+                        float sTime = floor(u_time * 7.5 + float(i)*31.7);
+                        float sX = hash(vec2(sTime, 14.2));
+                        if(abs(uv.x - sX) < (0.0004 + u_scratches * 0.0016)) {
+                            float sYStart = hash(vec2(sTime, 61.3));
+                            float sLen = hash(vec2(sTime, 77.2)) * 0.45;
+                            if(uv.y >= sYStart && uv.y <= (sYStart + sLen)) {
+                                color = vec3(hash(uv)*0.25);
+                            }
+                        }
+                    }
+                }
+
+                // 4. Edge Vignette & Burn Mechanics
+                float dToCenter = length(uv - 0.5);
+                float vignette = smoothstep(0.72 - (u_edge_wear * 0.32), 1.25 - (u_edge_wear * 0.42), dToCenter);
+                color = mix(color, vec3(0.01), vignette);
+
+                if(u_emulsion > 0.0) {
+                    float boundaryNoise = fbm(uv * 4.5);
+                    if(uv.x < (0.018 + u_emulsion * 0.075 * boundaryNoise) || uv.x > (0.982 - u_emulsion * 0.075 * boundaryNoise) ||
+                       uv.y < (0.018 + u_emulsion * 0.075 * boundaryNoise) || uv.y > (0.982 - u_emulsion * 0.075 * boundaryNoise)) {
+                        color = mix(color, vec3(0.94, 0.91, 0.84), u_emulsion);
+                    }
+                }
+
+                if(u_burn > 0.0) {
+                    float burnLuma = smoothstep(0.85 - (u_burn*0.45), 0.08, length(uv - vec2(0.0, 0.5)));
+                    color += vec3(burnLuma * 0.48, burnLuma * 0.16, 0.0) * u_burn;
+                }
+
+                // 5. Chromatic Grade & Age Profile Mixers
+                float luma = dot(color, vec3(0.299, 0.587, 0.114));
+                color = mix(color, vec3(luma), u_fade * 0.75);
+
+                vec3 sepiaColor = vec3(
+                    (luma * 0.393) + (luma * 0.769) + (luma * 0.189),
+                    (luma * 0.349) + (luma * 0.686) + (luma * 0.168),
+                    (luma * 0.272) + (luma * 0.534) + (luma * 0.131)
+                );
+                color = mix(color, sepiaColor, u_sepia);
+
+                fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+            }
         `;
-    </script>
 
-    <script>
-        const canvas = document.getElementById("gl-canvas");
-        const gl = canvas.getContext("webgl2", { preserveDrawingBuffer: true });
+        // --- Context Architecture ---
+        let gl, program, positionBuffer, vao;
+        let textureID = null, sourceElement = null;
+        let isVideo = false, isWebcam = false, webcamStream = null;
 
-        if (!gl) alert("WebGL2 engine mapping failed.");
+        const state = {
+            gamma: 1.0, shadows: 0.0, midtones: 1.0, highlights: 1.0, invert: false,
+            paperType: 0, paperOpacity: 0.35, paperContrast: 1.0,
+            grain: 0.25, dust: 0.15, scratches: 0.20,
+            edgeWear: 0.40, emulsion: 0.0, burn: 0.10,
+            sepia: 0.65, fade: 0.30,
+            animType: 1, speed: 30, time: 0, lastTime: 0
+        };
 
-        const programInfo = twgl.createProgramInfo(gl, [vsSource, fsSource]);
-        const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
-            position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
-        });
+        const canvas = document.getElementById('glCanvas');
+        const wrapper = document.getElementById('canvas-wrapper');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
 
-        // Application Global Pipeline Parameters
-        let mousePos = [0.5, 0.5];
-        let targetMousePos = [0.5, 0.5];
-        let currentTexture;
-        let recordingState = false;
-        let mediaRecorder;
-        let videoChunks = [];
+        let mediaRecorder = null, recordedChunks = [];
+        let isRecording = false;
 
-        // UI Target Configurations Hooking Elements
-        const uiTextureMode = document.getElementById('param-textureMode');
-        const uiGrainFreq = document.getElementById('param-grainFreq');
-        const uiDeform = document.getElementById('param-deform');
-        const uiRadius = document.getElementById('param-radius');
-        const uiColor1 = document.getElementById('color1');
-        const uiColor2 = document.getElementById('color2');
-        const uiColor3 = document.getElementById('color3');
-        const uiColor4 = document.getElementById('color4');
+        function initContext() {
+            gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
+            if (!gl) { alert('WebGL2 required.'); return; }
 
-        function hexToRgb(hex) {
-            return [
-                parseInt(hex.slice(1, 3), 16) / 255,
-                parseInt(hex.slice(3, 5), 16) / 255,
-                parseInt(hex.slice(5, 7), 16) / 255
-            ];
+            const vs = compileShader(gl.VERTEX_SHADER, vsSource);
+            const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+            program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+
+            const quad = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+            positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+
+            vao = gl.createVertexArray();
+            gl.bindVertexArray(vao);
+            const posLoc = gl.getAttribLocation(program, 'position');
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+            createSolidBaseTexture(38, 36, 33);
         }
 
-        // Generate Procedural High-Contrast Industrial Grid Base Texture Layout
-        function createDefaultTexture() {
-            const size = 1000;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = size; tempCanvas.height = size;
-            const ctx = tempCanvas.getContext('2d');
-
-            ctx.fillStyle = '#0a0a12'; ctx.fillRect(0, 0, size, size);
-            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(500, 500, 300, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#0a0a12'; ctx.beginPath(); ctx.rect(320, 320, 360, 360); ctx.fill();
-            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(500, 500, 120, 0, Math.PI * 2); ctx.fill();
-
-            return twgl.createTexture(gl, { src: tempCanvas, min: gl.LINEAR, mag: gl.LINEAR, wrap: gl.CLAMP_TO_EDGE });
+        function compileShader(type, src) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, src);
+            gl.compileShader(shader);
+            return shader;
         }
 
-        currentTexture = createDefaultTexture();
-
-        function resizeCanvas(forcedWidth = null, forcedHeight = null) {
-            const w = forcedWidth || canvas.clientWidth;
-            const h = forcedHeight || canvas.clientHeight;
-            if (canvas.width !== w || canvas.height !== h) {
-                canvas.width = w; canvas.height = h;
-                gl.viewport(0, 0, w, h);
-            }
+        function createSolidBaseTexture(r, g, b) {
+            if(textureID) gl.deleteTexture(textureID);
+            textureID = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, textureID);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([r, g, b, 255]));
+            configureTexParameters();
         }
 
-        // Active Event System Tracking Listeners Loop
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            targetMousePos[0] = (e.clientX - rect.left) / rect.width;
-            targetMousePos[1] = (e.clientY - rect.top) / rect.height;
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            if(e.touches.length > 0) {
-                const rect = canvas.getBoundingClientRect();
-                targetMousePos[0] = (e.touches[0].clientX - rect.left) / rect.width;
-                targetMousePos[1] = (e.touches[0].clientY - rect.top) / rect.height;
-            }
-        }, { passive: true });
-
-        // Local Image Loader Matrix File System Pipeline Integration
-        document.getElementById('image-loader').addEventListener('change', (e) => {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    gl.deleteTexture(currentTexture);
-                    currentTexture = twgl.createTexture(gl, { src: img, min: gl.LINEAR, mag: gl.LINEAR, wrap: gl.CLAMP_TO_EDGE });
-                    document.getElementById('upload-label').innerText = "LAYER TRANSLATED";
-                    document.getElementById('upload-label').style.borderColor = "var(--accent)";
-                };
-                img.src = event.target.result;
-            };
-            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-        });
-
-        // Synchronize display text value labels dynamically on execution cycles
-        const numericSliders = [uiGrainFreq, uiDeform, uiRadius];
-        numericSliders.forEach(slider => {
-            slider.addEventListener('input', (e) => {
-                document.getElementById(`val-${e.target.id.replace('param-', '')}`).innerText = parseFloat(e.target.value).toFixed(1);
-            });
-        });
-
-        // Core Shader Frame Render Pipeline Execution Matrix Loop
-        function drawFrame(time) {
-            // Coordinate tracking vector physics smoothing
-            mousePos[0] += (targetMousePos[0] - mousePos[0]) * 0.1;
-            mousePos[1] += (targetMousePos[1] - mousePos[1]) * 0.1;
-
-            const uniforms = {
-                u_resolution: [canvas.width, canvas.height],
-                u_mouse: mousePos,
-                u_time: time * 0.001,
-                u_texture: currentTexture,
-                u_textureMode: parseInt(uiTextureMode.value),
-                u_grainFreq: parseFloat(uiGrainFreq.value),
-                u_deform: parseFloat(uiDeform.value),
-                u_radius: parseFloat(uiRadius.value),
-                u_color1: hexToRgb(uiColor1.value),
-                u_color2: hexToRgb(uiColor2.value),
-                u_color3: hexToRgb(uiColor3.value),
-                u_color4: hexToRgb(uiColor4.value)
-            };
-
-            gl.useProgram(programInfo.program);
-            twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-            twgl.setUniforms(programInfo, uniforms);
-            twgl.drawBufferInfo(gl, bufferInfo);
+        function updateTexture(el) {
+            if(!textureID) textureID = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, textureID);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el);
+            configureTexParameters();
         }
 
-        function renderLoop(time) {
-            if (!recordingState && canvas.width !== canvas.clientWidth) {
-                resizeCanvas(); // Standard responsive dynamic checks window sizing mapping bounds profiles
-            }
-            drawFrame(time);
-            requestAnimationFrame(renderLoop);
+        function configureTexParameters() {
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         }
 
-        // Initialize Runtime Loops Engines
-        resizeCanvas();
-        requestAnimationFrame(renderLoop);
-
-        // --- EXPORT PIPELINE 01: High-Res 4K Snapshot Engine ---
-        document.getElementById('btn-snapshot').addEventListener('click', () => {
-            const originalWidth = canvas.clientWidth;
-            const originalHeight = canvas.clientHeight;
-
-            // Instantly push GPU pipeline viewport to a crisp 4K 3840x3840 square aspect configuration matrix boundary
-            resizeCanvas(3840, 3840);
+        function resizeViewport(naturalW = 1000, naturalH = 1000) {
+            const container = document.getElementById('viewport-container');
+            const ratio = naturalW / naturalH;
             
-            // Draw a single frame synchronously at the target high-res format size limits
-            drawFrame(performance.now());
-
-            // Extract the pristine full fidelity raster array contents straight from hardware back buffers
-            const dataURL = canvas.toDataURL('image/png');
-            
-            const link = document.createElement('a');
-            link.download = `grain-grid-4k-export-${Date.now()}.png`;
-            link.href = dataURL;
-            link.click();
-
-            // Re-establish original responsive window layout parameters smoothly
-            resizeCanvas(originalWidth, originalHeight);
-            drawFrame(performance.now());
-        });
-
-        // --- EXPORT PIPELINE 02: Media Stream Real-Time Video Capturing Terminal System ---
-        const recordBtn = document.getElementById('btn-record');
-        recordBtn.addEventListener('click', () => {
-            if (!recordingState) {
-                const stream = canvas.captureStream(60);
-                let options = { mimeType: 'video/webm;codecs=vp9' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm;codecs=vp8' };
-
-                videoChunks = [];
-                mediaRecorder = new MediaRecorder(stream, options);
-
-                mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) videoChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(videoChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.download = `grain-grid-capture-${Date.now()}.webm`;
-                    link.href = url; link.click(); URL.revokeObjectURL(url);
-                };
-
-                mediaRecorder.start();
-                recordingState = true;
-                recordBtn.innerText = "STOP & SAVE WEBM";
-                recordBtn.classList.add('recording');
-            } else {
-                mediaRecorder.stop();
-                recordingState = false;
-                recordBtn.innerText = "START VIDEO RECORDING";
-                recordBtn.classList.remove('recording');
+            let w = container.clientWidth - 60;
+            let h = w / ratio;
+            if (h > container.clientHeight - 60) {
+                h = container.clientHeight - 60;
+                w = h * ratio;
             }
-        });
-    </script>
-</body>
-</html>
+
+            wrapper.style.width = `${w}px`;
+            wrapper.style.height = `${h}px`;
+            canvas.width = w;
+            canvas.height = h;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- Render Loop Engine ---
+        function renderPipeline(timestamp) {
+            timestamp *= 0.001;
+            const delta = timestamp - state.lastTime;
+            state.lastTime = timestamp;
+
+            if (state.animType > 0) {
+                let speedMod = state.speed * 0.15;
+                if(state.animType === 2) {
+                    if(Math.random() > 0.85) state.time += delta * speedMod * 7.5;
+                    else state.time += delta * speedMod * 0.12;
+                } else {
+                    state.time += delta * speedMod;
+                }
+            }
+
+            if ((isVideo || isWebcam) && sourceElement) {
+                if (sourceElement.readyState >= sourceElement.HAVE_CURRENT_DATA) {
+                    updateTexture(sourceElement);
+                }
+            }
+
+            gl.clearColor(0,0,0,1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.useProgram(program);
+
+            gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), canvas.width, canvas.height);
+            gl.uniform1f(gl.getUniformLocation(program, "u_time"), state.time);
+            gl.uniform1f(gl.getUniformLocation(program, "u_gamma"), state.gamma);
+            gl.uniform1f(gl.getUniformLocation(program, "u_shadows"), state.shadows);
+            gl.uniform1f(gl.getUniformLocation(program, "u_midtones"), state.midtones);
+            gl.uniform1f(gl.getUniformLocation(program, "u_highlights"), state.highlights);
+            gl.uniform1i(gl.getUniformLocation(program, "u_invert"), state.invert ? 1 : 0);
+
+            gl.uniform1i(gl.getUniformLocation(program, "u_tex_type"), state.paperType);
+            gl.uniform1f(gl.getUniformLocation(program, "u_tex_opacity"), state.paperOpacity);
+            gl.uniform1f(gl.getUniformLocation(program, "u_tex_contrast"), state.paperContrast);
+
+            gl.uniform1f(gl.getUniformLocation(program
