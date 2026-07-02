@@ -429,4 +429,522 @@
                 rowPattern = smoothstep(-0.2, 0.2, rowPattern);
 
                 float rad = radians(u_angle);
-                mat2 rotMat = mat
+                mat2 rotMat = mat2(cos(rad), -sin(rad), sin(rad), cos(rad));
+                vec2 rotatedUv = rotMat * (uv - 0.5);
+                
+                float grain = noise(uv * u_resolution + vec2(u_time * 12.13));
+                float mixedValue = clamp(lum * 0.5 + (rowPattern * 0.3) + (grain * 0.2) + rotatedUv.x * 0.3, 0.0, 1.0);
+
+                if(u_stepping > 0.0) {
+                    mixedValue = floor(mixedValue * u_stepping) / (u_stepping - 1.0);
+                }
+
+                vec3 finalColor = u_colors[0];
+                float totalW = 0.0;
+                for(int i = 0; i < u_num_colors; i++) { totalW += u_weights[i]; }
+
+                float accumulated = 0.0;
+                for(int i = 0; i < 4; i++) {
+                    if (i >= u_num_colors - 1) break;
+                    float w1 = u_weights[i] / totalW;
+                    float nextLimit = accumulated + w1;
+                    
+                    if(mixedValue >= accumulated && mixedValue <= nextLimit) {
+                        float t = (mixedValue - accumulated) / w1;
+                        finalColor = mix(u_colors[i], u_colors[i+1], t);
+                        break;
+                    }
+                    accumulated = nextLimit;
+                    finalColor = u_colors[i+1];
+                }
+
+                fragColor = vec4(finalColor, 1.0);
+            }
+        `;
+
+        // --- App Architecture ---
+        let gl, program;
+        let positionBuffer, vao;
+        let textureID = null;
+        let sourceElement = null; 
+        let isVideo = false;
+        let isWebcam = false;
+        let webcamStream = null;
+
+        const state = {
+            gamma: 1.0, shadows: 0.0, midtones: 1.0, highlights: 1.0, invert: false,
+            bands: 5, rows: 10, dist: 0, angle: 0, rotate: false,
+            playing: true, speed: 20, modType: 0, loopMode: 'loop', 
+            stepping: 0,
+            colors: [
+                { hex: '#000000', weight: 1.0 },
+                { hex: '#333333', weight: 1.0 },
+                { hex: '#888888', weight: 1.0 },
+                { hex: '#cccccc', weight: 1.0 },
+                { hex: '#ffffff', weight: 1.0 }
+            ],
+            aspect: '1:1', uiScale: 100,
+            time: 0, lastFrameTime: 0
+        };
+
+        const canvas = document.getElementById('glCanvas');
+        const wrapper = document.getElementById('canvas-wrapper');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+
+        function initContext() {
+            gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
+            if (!gl) { alert('WebGL 2 required'); return; }
+
+            const vs = compileShader(gl.VERTEX_SHADER, vsSource);
+            const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+            program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(gl.getProgramInfoLog(program));
+            }
+
+            const positions = new Float32Array([-1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1]);
+            positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+            vao = gl.createVertexArray();
+            gl.bindVertexArray(vao);
+            const posLoc = gl.getAttribLocation(program, 'position');
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+            createDefaultTexture();
+        }
+
+        function compileShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function createDefaultTexture() {
+            if(textureID) gl.deleteTexture(textureID);
+            textureID = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, textureID);
+            const data = new Uint8Array([32, 32, 32, 255]);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        }
+
+        function updateTextureSource(element) {
+            if(!textureID) textureID = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, textureID);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        }
+
+        function resizeCanvas() {
+            const parts = state.aspect.split(':');
+            const aspectW = parseFloat(parts[0]);
+            const aspectH = parseFloat(parts[1]);
+            const ratio = aspectW / aspectH;
+
+            const container = document.getElementById('viewport-container');
+            const maxW = container.clientWidth - 40;
+            const maxH = container.clientHeight - 40;
+
+            let targetW = maxW;
+            let targetH = maxW / ratio;
+
+            if (targetH > maxH) {
+                targetH = maxH;
+                targetW = maxH * ratio;
+            }
+
+            wrapper.style.width = `${targetW}px`;
+            wrapper.style.height = `${targetH}px`;
+            wrapper.style.transform = `scale(${state.uiScale / 100})`;
+
+            canvas.width = targetW;
+            canvas.height = targetH;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Core WebGL Drawing Commands ---
+        function drawFrame() {
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.useProgram(program);
+
+            gl.uniform1f(gl.getUniformLocation(program, "u_gamma"), state.gamma);
+            gl.uniform1f(gl.getUniformLocation(program, "u_shadows"), state.shadows);
+            gl.uniform1f(gl.getUniformLocation(program, "u_midtones"), state.midtones);
+            gl.uniform1f(gl.getUniformLocation(program, "u_highlights"), state.highlights);
+            gl.uniform1i(gl.getUniformLocation(program, "u_invert"), state.invert ? 1 : 0);
+
+            let dynamicBands = state.bands;
+            let calculatedTime = state.time;
+            
+            if (state.loopMode === 'bounce') {
+                calculatedTime = (Math.sin(state.time) * 0.5 + 0.5) * 10.0;
+            }
+
+            if(state.modType === 1) { 
+                dynamicBands += Math.sin(state.time * 2.0) * (state.bands * 0.3);
+            } else if (state.modType === 2) { 
+                dynamicBands += Math.abs(Math.sin(state.time * 4.0)) * (state.bands * 0.5);
+            } else if (state.modType === 3) { 
+                dynamicBands += (Math.random() - 0.5) * (state.bands * 0.4);
+            }
+
+            gl.uniform1f(gl.getUniformLocation(program, "u_bands"), dynamicBands);
+            gl.uniform1f(gl.getUniformLocation(program, "u_rows"), state.rows);
+            gl.uniform1i(gl.getUniformLocation(program, "u_dist"), state.dist);
+            gl.uniform1f(gl.getUniformLocation(program, "u_angle"), state.angle);
+            gl.uniform1i(gl.getUniformLocation(program, "u_rotate"), state.rotate ? 1 : 0);
+            gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), canvas.width, canvas.height);
+            gl.uniform1f(gl.getUniformLocation(program, "u_time"), calculatedTime);
+            gl.uniform1f(gl.getUniformLocation(program, "u_stepping"), state.stepping > 0 ? state.stepping : 0.0);
+
+            gl.uniform1i(gl.getUniformLocation(program, "u_num_colors"), state.colors.length);
+
+            const colorsFlat = [];
+            const weightsFlat = [];
+            state.colors.forEach(c => {
+                const rgb = hexToRgb(c.hex);
+                colorsFlat.push(rgb.r, rgb.g, rgb.b);
+                weightsFlat.push(c.weight);
+            });
+
+            gl.uniform3fv(gl.getUniformLocation(program, "u_colors"), new Float32Array(colorsFlat));
+            gl.uniform1fv(gl.getUniformLocation(program, "u_weights"), new Float32Array(weightsFlat));
+
+            gl.bindVertexArray(vao);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
+        // --- Standard Animation Execution Loop ---
+        function render(now) {
+            now *= 0.001; 
+            const delta = now - state.lastFrameTime;
+            state.lastFrameTime = now;
+
+            if (state.playing) {
+                let speedMod = state.speed * 0.1;
+                state.time += delta * speedMod;
+            }
+
+            if ((isVideo || isWebcam) && sourceElement) {
+                if (sourceElement.readyState >= sourceElement.HAVE_CURRENT_DATA) {
+                    updateTextureSource(sourceElement);
+                }
+            }
+
+            drawFrame();
+            requestAnimationFrame(render);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16) / 255,
+                g: parseInt(result[2], 16) / 255,
+                b: parseInt(result[3], 16) / 255
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        // --- Core UI Processing Engines ---
+        function generateColorListUI() {
+            const container = document.getElementById('color-list');
+            container.innerHTML = '';
+            state.colors.forEach((col, idx) => {
+                const row = document.createElement('div');
+                row.className = 'color-item';
+                row.draggable = true;
+                row.dataset.index = idx;
+
+                row.innerHTML = `
+                    <span style="width:12px; color:#555;">☰</span>
+                    <input type="color" value="${col.hex}">
+                    <input type="range" min="0.1" max="5.0" step="0.1" value="${col.weight}">
+                `;
+
+                row.querySelector('input[type="color"]').addEventListener('input', (e) => {
+                    state.colors[idx].hex = e.target.value;
+                });
+                row.querySelector('input[type="range"]').addEventListener('input', (e) => {
+                    state.colors[idx].weight = parseFloat(e.target.value);
+                });
+
+                row.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', idx);
+                    row.style.opacity = '0.4';
+                });
+                row.addEventListener('dragend', () => row.style.opacity = '1');
+                row.addEventListener('dragover', (e) => e.preventDefault());
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIdx = idx;
+                    if(fromIdx !== toIdx) {
+                        const targetItem = state.colors.splice(fromIdx, 1)[0];
+                        state.colors.splice(toIdx, 0, targetItem);
+                        generateColorListUI();
+                    }
+                });
+
+                container.appendChild(row);
+            });
+        }
+
+        function processFile(file) {
+            if(!file) return;
+            const url = URL.createObjectURL(file);
+            
+            if(webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                isWebcam = false;
+                document.getElementById('webcam-btn').classList.remove('active');
+            }
+
+            if(file.type.startsWith('image/')) {
+                isVideo = false;
+                const img = new Image();
+                img.onload = function() {
+                    sourceElement = img;
+                    updateTextureSource(img);
+                    dropZone.innerText = `IMAGE: ${file.name.toUpperCase()}`;
+                };
+                img.src = url;
+            } else if(file.type.startsWith('video/')) {
+                isVideo = true;
+                const video = document.createElement('video');
+                video.src = url;
+                video.autoplay = true;
+                video.loop = true;
+                video.muted = true;
+                video.play();
+                video.onloadeddata = function() {
+                    sourceElement = video;
+                    dropZone.innerText = `VIDEO: ${file.name.toUpperCase()}`;
+                };
+            }
+        }
+
+        function initInterface() {
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
+            
+            window.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            window.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if(e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
+            });
+
+            document.getElementById('webcam-btn').addEventListener('click', async function() {
+                if(isWebcam) {
+                    if(webcamStream) webcamStream.getTracks().forEach(track => track.stop());
+                    isWebcam = false;
+                    this.classList.remove('active');
+                    createDefaultTexture();
+                    dropZone.innerText = "DRAG & DROP IMAGE/VIDEO OR CLICK";
+                } else {
+                    try {
+                        webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        const video = document.createElement('video');
+                        video.srcObject = webcamStream;
+                        video.autoplay = true;
+                        video.play();
+                        video.onloadeddata = () => {
+                            sourceElement = video;
+                            isWebcam = true;
+                            isVideo = false;
+                            this.classList.add('active');
+                            dropZone.innerText = "WEBCAM ACTIVE PIPELINE";
+                        };
+                    } catch(err) {
+                        alert("Webcam connection failed access requests.");
+                    }
+                }
+            });
+
+            const bindings = [
+                { id: 'p-gamma', var: 'gamma', label: 'v-gamma' },
+                { id: 'p-shadows', var: 'shadows', label: 'v-shadows' },
+                { id: 'p-midtones', var: 'midtones', label: 'v-midtones' },
+                { id: 'p-highlights', var: 'highlights', label: 'v-highlights' },
+                { id: 'p-bands', var: 'bands', label: 'v-bands' },
+                { id: 'p-rows', var: 'rows', label: 'v-rows' },
+                { id: 'p-angle', var: 'angle', label: 'v-angle', suffix: '°' },
+                { id: 'p-speed', var: 'speed', label: 'v-speed' },
+                { id: 'p-step', var: 'stepping', label: 'v-step' }
+            ];
+
+            bindings.forEach(b => {
+                const el = document.getElementById(b.id);
+                const lbl = document.getElementById(b.label);
+                el.addEventListener('input', (e) => {
+                    state[b.var] = parseFloat(e.target.value);
+                    lbl.innerText = state[b.var] + (b.suffix || '');
+                });
+            });
+
+            document.getElementById('p-invert').addEventListener('click', function() {
+                state.invert = !state.invert;
+                this.classList.toggle('active', state.invert);
+                this.innerText = `Invert Image: ${state.invert ? 'ON' : 'OFF'}`;
+            });
+
+            document.getElementById('p-rotate').addEventListener('click', function() {
+                state.rotate = !state.rotate;
+                this.classList.toggle('active', state.rotate);
+                this.innerText = `Rotate Grid 90°: ${state.rotate ? 'ON' : 'OFF'}`;
+            });
+
+            document.getElementById('anim-toggle').addEventListener('click', function() {
+                state.playing = !state.playing;
+                this.classList.toggle('active', state.playing);
+                this.innerText = `Engine: ${state.playing ? 'PLAYING' : 'PAUSED'}`;
+            });
+
+            document.getElementById('p-dist').addEventListener('change', (e) => {
+                state.dist = parseInt(e.target.value);
+            });
+            document.getElementById('p-mod-type').addEventListener('change', (e) => {
+                state.modType = parseInt(e.target.value);
+            });
+            document.getElementById('p-aspect').addEventListener('change', (e) => {
+                state.aspect = e.target.value;
+                resizeCanvas();
+            });
+
+            document.getElementById('p-scale').addEventListener('input', (e) => {
+                state.uiScale = parseInt(e.target.value);
+                document.getElementById('v-scale').innerText = `${state.uiScale}%`;
+                resizeCanvas();
+            });
+
+            const loopBtn = document.getElementById('p-loop-grad');
+            const bounceBtn = document.getElementById('p-bounce-grad');
+            loopBtn.addEventListener('click', () => {
+                state.loopMode = 'loop';
+                loopBtn.classList.add('active');
+                bounceBtn.classList.remove('active');
+            });
+            bounceBtn.addEventListener('click', () => {
+                state.loopMode = 'bounce';
+                bounceBtn.classList.add('active');
+                loopBtn.classList.remove('active');
+            });
+
+            document.getElementById('exp-low').addEventListener('click', () => captureFrame(1000));
+            document.getElementById('exp-high').addEventListener('click', () => captureFrame(3000));
+            document.getElementById('exp-video').addEventListener('click', toggleVideoRecording);
+
+            generateColorListUI();
+        }
+
+        // --- High Resolution Image Extraction Engine ---
+        function captureFrame(size) {
+            const parts = state.aspect.split(':');
+            const aspectW = parseFloat(parts[0]);
+            const aspectH = parseFloat(parts[1]);
+            const ratio = aspectW / aspectH;
+
+            let targetW = size;
+            let targetH = size / ratio;
+            if(ratio < 1.0) {
+                targetH = size;
+                targetW = size * ratio;
+            }
+
+            // Temporarily update high resolution dimension parameters 
+            canvas.width = targetW;
+            canvas.height = targetH;
+            gl.viewport(0, 0, targetW, targetH);
+
+            // Synchronously snapshot parameters into context
+            drawFrame();
+
+            // Extract file cleanly using DataURL conversion vectors
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `grain_grid_${size}px.png`;
+            link.href = dataUrl;
+            link.click();
+
+            // Safe environment recovery call loops
+            resizeCanvas();
+        }
+
+        function toggleVideoRecording() {
+            const btn = document.getElementById('exp-video');
+            const statusIndicator = document.getElementById('recording-status');
+            
+            if (isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.innerText = "Record Output (Start/Stop)";
+                btn.style.background = "#111";
+                statusIndicator.style.display = "none";
+            } else {
+                recordedChunks = [];
+                const stream = canvas.captureStream(30); 
+                
+                let options = { mimeType: 'video/webm;codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm;codecs=vp8' };
+                }
+
+                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `grain_grid_capture.webm`;
+                    link.href = url;
+                    link.click();
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.innerText = "STOP RECORDING";
+                btn.style.background = "#550000";
+                statusIndicator.style.display = "block";
+            }
+        }
+
+        window.onload = () => {
+            initContext();
+            initInterface();
+            resizeCanvas();
+            requestAnimationFrame(render);
+        };
+    </script>
+</body>
+</html>
