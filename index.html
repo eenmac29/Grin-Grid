@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Vintage Pipeline & Texture Studio</title>
+    <title>Ultimate Grain Gradient Grid Studio</title>
     <style>
         * {
             box-sizing: border-box;
@@ -22,7 +22,7 @@
             display: flex;
         }
 
-        /* --- Interface Framework --- */
+        /* --- UI Blueprint --- */
         #sidebar {
             width: 360px;
             height: 100%;
@@ -40,7 +40,7 @@
             justify-content: center;
             background-color: #0a0a0a;
             position: relative;
-            padding: 30px;
+            padding: 25px;
         }
 
         .scroll-area {
@@ -67,21 +67,21 @@
         }
 
         .section {
-            margin-bottom: 28px;
+            margin-bottom: 26px;
         }
 
         .section-title {
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             color: #666;
             border-bottom: 1px dashed #333;
             padding-bottom: 4px;
         }
 
         .control-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
             flex-direction: column;
         }
@@ -89,7 +89,7 @@
         .control-label {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             color: #888;
             text-transform: uppercase;
         }
@@ -98,12 +98,12 @@
             color: #fff;
         }
 
-        /* --- Expanded Texture Grid Matrix --- */
+        /* --- Procedural Texture Matrix Grid --- */
         .texture-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
+            gap: 5px;
+            margin-bottom: 10px;
         }
 
         .texture-option {
@@ -130,7 +130,7 @@
             color: #000;
         }
 
-        /* --- Sleek Custom Inputs --- */
+        /* --- Inputs Matrix --- */
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
@@ -157,9 +157,6 @@
             outline: none;
             text-align: center;
             width: 100%;
-        }
-        input[type="number"]:focus {
-            border-color: #555;
         }
 
         select, button {
@@ -198,10 +195,10 @@
 
         #drop-zone {
             border: 1px dashed #222;
-            padding: 25px 10px;
+            padding: 22px 10px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             color: #666;
         }
         #drop-zone:hover {
@@ -209,10 +206,34 @@
             color: #fff;
         }
 
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0a0a0a;
+            border: 1px solid #222;
+            padding: 6px;
+            margin-bottom: 4px;
+            cursor: grab;
+        }
+        .color-item:active { cursor: grabbing; }
+        .color-item input[type="color"] {
+            border: none;
+            background: transparent;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .color-item input[type="range"] {
+            flex: 1;
+        }
+
         #canvas-wrapper {
             position: relative;
             background: #000;
             box-shadow: 0 0 40px rgba(0,0,0,0.9);
+            max-width: 100%;
+            max-height: 100%;
         }
 
         canvas {
@@ -236,39 +257,60 @@
 <body>
 
     <div id="sidebar">
-        <h1>Vintage Pipeline Pro</h1>
+        <h1>Grain Grid Studio</h1>
         <div class="scroll-area">
             
             <div class="section">
-                <div class="section-title">1. Source Input</div>
+                <div class="section-title">Source Input</div>
                 <div id="drop-zone">DROP IMAGE / VIDEO HERE</div>
                 <input type="file" id="file-input" accept="image/*,video/*" style="display:none;">
                 <button id="webcam-btn" class="toggle-btn">Toggle Live Webcam</button>
             </div>
 
             <div class="section">
-                <div class="section-title">2. Contrast & Tone</div>
+                <div class="section-title">Canvas & Aspect</div>
+                <div class="control-group" style="margin-bottom:6px;">
+                    <select id="p-aspect">
+                        <option value="16:9">Horizontal 16:9</option>
+                        <option value="2:1">Horizontal 2x1</option>
+                        <option value="3:2">Horizontal 3:2</option>
+                        <option value="4:3">Horizontal 4:3</option>
+                        <option value="1:1" selected>Square 1:1</option>
+                        <option value="9:16">Vertical 9:16</option>
+                        <option value="1:2">Vertical 1x2</option>
+                        <option value="2:3">Vertical 2x3</option>
+                        <option value="3:4">Vertical 3:4</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <div class="control-label">UI Render Scale <span class="val" id="v-scale">100%</span></div>
+                    <input type="range" id="p-scale" min="20" max="100" step="1" value="100">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Source Contrast</div>
                 <div class="control-group">
                     <div class="control-label">Gamma <span class="val" id="v-gamma">1.0</span></div>
-                    <input type="range" id="p-gamma" min="0.3" max="2.5" step="0.05" value="1.0">
+                    <input type="range" id="p-gamma" min="0.2" max="3.0" step="0.05" value="1.0">
                 </div>
                 <div class="control-group">
                     <div class="control-label">Shadows <span class="val" id="v-shadows">0.0</span></div>
-                    <input type="range" id="p-shadows" min="-0.4" max="0.4" step="0.01" value="0.0">
+                    <input type="range" id="p-shadows" min="-0.5" max="0.5" step="0.01" value="0.0">
                 </div>
                 <div class="control-group">
                     <div class="control-label">Midtones <span class="val" id="v-midtones">1.0</span></div>
-                    <input type="range" id="p-midtones" min="0.3" max="2.2" step="0.05" value="1.0">
+                    <input type="range" id="p-midtones" min="0.2" max="2.5" step="0.05" value="1.0">
                 </div>
                 <div class="control-group">
                     <div class="control-label">Highlights <span class="val" id="v-highlights">1.0</span></div>
                     <input type="range" id="p-highlights" min="0.5" max="2.0" step="0.05" value="1.0">
                 </div>
-                <button id="p-invert" class="toggle-btn">Inverting Pipeline: OFF</button>
+                <button id="p-invert" class="toggle-btn">Invert Image: OFF</button>
             </div>
 
             <div class="section">
-                <div class="section-title">3. Master Texture Grid</div>
+                <div class="section-title">Organic Texture Matrix</div>
                 <div class="texture-grid">
                     <div class="texture-option active" data-value="0">None</div>
                     <div class="texture-option" data-value="1">Parchment</div>
@@ -279,8 +321,8 @@
                     <div class="texture-option" data-value="6">Emulsion Crack</div>
                 </div>
                 <div class="control-group">
-                    <div class="control-label">Texture Opacity <span class="val" id="v-tex-opacity">0.35</span></div>
-                    <input type="range" id="p-tex-opacity" min="0.0" max="1.0" step="0.02" value="0.35">
+                    <div class="control-label">Texture Opacity <span class="val" id="v-tex-opacity">0.0</span></div>
+                    <input type="range" id="p-tex-opacity" min="0.0" max="1.0" step="0.02" value="0.0">
                 </div>
                 <div class="control-group">
                     <div class="control-label">Texture Contrast <span class="val" id="v-tex-contrast">1.0</span></div>
@@ -289,66 +331,64 @@
             </div>
 
             <div class="section">
-                <div class="section-title">4. Grain & Damage</div>
+                <div class="section-title">Grid Structure</div>
                 <div class="control-group">
-                    <div class="control-label">Film Grain <span class="val" id="v-grain">0.25</span></div>
-                    <input type="range" id="p-grain" min="0.0" max="1.0" step="0.02" value="0.25">
+                    <div class="control-label">Grid Bands <span class="val" id="v-bands">5</span></div>
+                    <input type="range" id="p-bands" min="1" max="30" step="1" value="5">
                 </div>
                 <div class="control-group">
-                    <div class="control-label">Dust Density <span class="val" id="v-dust">0.15</span></div>
-                    <input type="range" id="p-dust" min="0.0" max="1.0" step="0.01" value="0.15">
+                    <div class="control-label">Line Rows Per Band <span class="val" id="v-rows">10</span></div>
+                    <input type="range" id="p-rows" min="2" max="100" step="1" value="10">
                 </div>
                 <div class="control-group">
-                    <div class="control-label">Hair Scratches <span class="val" id="v-scratches">0.20</span></div>
-                    <input type="range" id="p-scratches" min="0.0" max="1.0" step="0.02" value="0.20">
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">5. Weathering & Decay</div>
-                <div class="control-group">
-                    <div class="control-label">Vignette Edge Wear <span class="val" id="v-edge-wear">0.40</span></div>
-                    <input type="range" id="p-edge-wear" min="0.0" max="1.5" step="0.02" value="0.40">
-                </div>
-                <div class="control-group">
-                    <div class="control-label">Emulsion Bleach <span class="val" id="v-emulsion">0.0</span></div>
-                    <input type="range" id="p-emulsion" min="0.0" max="1.0" step="0.02" value="0.0">
-                </div>
-                <div class="control-group">
-                    <div class="control-label">Light Burn Shifts <span class="val" id="v-burn">0.10</span></div>
-                    <input type="range" id="p-burn" min="0.0" max="1.0" step="0.02" value="0.10">
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">6. Chromatic Age Grade</div>
-                <div class="control-group">
-                    <div class="control-label">Sepia Saturation <span class="val" id="v-sepia">0.65</span></div>
-                    <input type="range" id="p-sepia" min="0.0" max="1.0" step="0.02" value="0.65">
-                </div>
-                <div class="control-group">
-                    <div class="control-label">Color Bleed Fade <span class="val" id="v-fade">0.30</span></div>
-                    <input type="range" id="p-fade" min="0.0" max="1.0" step="0.02" value="0.30">
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">7. Temporal Engine</div>
-                <div class="control-group">
-                    <select id="p-anim-type">
-                        <option value="1">Dynamic Fluctuations</option>
-                        <option value="2">Jitter Strobe Stutter</option>
-                        <option value="0">Static Freeze-Frame</option>
+                    <div class="control-label">Size Scaling Pattern</div>
+                    <select id="p-dist">
+                        <option value="0">Uniform Size</option>
+                        <option value="1">Linear Decreasing (Top-Down)</option>
+                        <option value="2">Exponential Decreasing</option>
+                        <option value="3">Banded Sizing Alternation</option>
                     </select>
                 </div>
                 <div class="control-group">
-                    <div class="control-label">Simulation Speed <span class="val" id="v-speed">30</span></div>
-                    <input type="range" id="p-speed" min="0" max="100" step="2" value="30">
+                    <div class="control-label">Band Gradient Angle <span class="val" id="v-angle">0°</span></div>
+                    <input type="range" id="p-angle" min="0" max="360" step="1" value="0">
+                </div>
+                <button id="p-rotate" class="toggle-btn">Rotate Grid 90°: OFF</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Animation Engine</div>
+                <button id="anim-toggle" class="toggle-btn active" style="margin-bottom:8px;">Engine: PLAYING</button>
+                <div class="control-group">
+                    <div class="control-label">Gradient Speed <span class="val" id="v-speed">20</span></div>
+                    <input type="range" id="p-speed" min="0" max="100" step="1" value="20">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">Grid Size Modulator</div>
+                    <select id="p-mod-type">
+                        <option value="0">Static / Off</option>
+                        <option value="1">Smooth Breathing Scale</option>
+                        <option value="2">Sine Wave Bounce</option>
+                        <option value="3">Intense Jitter Strobe</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button id="p-loop-grad" class="toggle-btn active">Loop Phase (0-100)</button>
+                    <button id="p-bounce-grad" class="toggle-btn">Bounce Phase (0-100-0)</button>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">8. Production Still Export</div>
+                <div class="section-title">Color System & Weights</div>
+                <div class="control-group">
+                    <div class="control-label">Tone Stepping Blocks <span class="val" id="v-step">0</span></div>
+                    <input type="range" id="p-step" min="0" max="32" step="1" value="0">
+                </div>
+                <div id="color-list"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Production Export</div>
                 <div class="control-group">
                     <div class="control-label">Target Width (Pixels)</div>
                     <input type="number" id="p-target-res" value="4096" min="500" max="8192" step="1">
@@ -356,10 +396,8 @@
                 <button id="exp-still-custom" style="text-align:center; background:#111; font-weight:bold; border-color:#444; margin-bottom:12px;">
                     EXPORT HIGH-RES STILL (PNG)
                 </button>
-                
-                <div class="section-title" style="margin-top:15px; font-size:9px;">Video Sequence Capture</div>
-                <button id="exp-video" style="background:#0a0a0a; text-align:center;">Record WebM Video Output</button>
-                <div id="rec-status">● DISK ENCODER STREAMING RUNTIME</div>
+                <button id="exp-video" style="background:#0a0a0a; text-align:center;">Record WebM Video Sequence</button>
+                <div id="rec-status">● REC STREAM DRIVER ACTIVE</div>
             </div>
 
         </div>
@@ -390,28 +428,33 @@
             uniform sampler2D u_texture;
             uniform vec2 u_resolution;
             uniform float u_time;
-
+            
+            // Contrast Adjustments
             uniform float u_gamma;
             uniform float u_shadows;
             uniform float u_midtones;
             uniform float u_highlights;
             uniform bool u_invert;
 
+            // Texture Variables
             uniform int u_tex_type;
             uniform float u_tex_opacity;
             uniform float u_tex_contrast;
 
-            uniform float u_grain;
-            uniform float u_dust;
-            uniform float u_scratches;
+            // Structure Parameters
+            uniform float u_bands;
+            uniform float u_rows;
+            uniform int u_dist;
+            uniform float u_angle;
+            uniform bool u_rotate;
 
-            uniform float u_edge_wear;
-            uniform float u_emulsion;
-            uniform float u_burn;
+            // Color System Array Modifiers
+            uniform int u_num_colors;
+            uniform vec3 u_colors[5];
+            uniform float u_weights[5];
+            uniform float u_stepping;
 
-            uniform float u_sepia;
-            uniform float u_fade;
-
+            // Algorithmic Math Noise Generators
             float hash(vec2 p) {
                 return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
             }
@@ -439,32 +482,32 @@
 
             void main() {
                 vec2 uv = vUv;
-                vec4 texSample = texture(u_texture, uv);
-                vec3 color = texSample.rgb;
+                vec4 tex = texture(u_texture, uv);
+                vec3 srcColor = tex.rgb;
 
-                // 1. Color/Contrast Correction Block
-                color = clamp(color + u_shadows, 0.0, 1.0);
-                color = pow(color, vec3(u_gamma));
-                color = pow(color, vec3(1.0 / max(u_midtones, 0.01)));
-                color = clamp(color * u_highlights, 0.0, 1.0);
+                // 1. Contrast Modifiers Stack
+                srcColor = clamp(srcColor + u_shadows, 0.0, 1.0);
+                srcColor = pow(srcColor, vec3(u_gamma));
+                srcColor = pow(srcColor, vec3(1.0 / max(u_midtones, 0.01)));
+                srcColor = clamp(srcColor * u_highlights, 0.0, 1.0);
 
-                if(u_invert) color = 1.0 - color;
+                if(u_invert) srcColor = 1.0 - srcColor;
+                float lum = dot(srcColor, vec3(0.299, 0.587, 0.114));
 
-                // 2. Procedural Texture Matrix Core
+                // 2. Procedural Organic Texture Evaluation Block
                 float texPattern = 1.0;
-                
                 if (u_tex_type == 1) { // Parchment
                     texPattern = fbm(uv * 7.5) * 0.7 + noise(uv * 130.0) * 0.3;
                 } else if (u_tex_type == 2) { // Kraft Paper Fibers
                     float fiberNetwork = step(0.97, hash(uv * vec2(180.0, 4.0))) * 0.4;
                     texPattern = (fbm(uv * 30.0) * 0.75 + fiberNetwork * 0.25);
-                } else if (u_tex_type == 3) { // Canvas Interlaced Threading
+                } else if (u_tex_type == 3) { // Canvas Thread Weave
                     float weave = sin(uv.x * u_resolution.x * 0.45) * sin(uv.y * u_resolution.y * 0.45);
                     texPattern = 0.82 + (weave * 0.18) + fbm(uv * 12.0) * 0.04;
                 } else if (u_tex_type == 4) { // Acetate Film Base Nitration
                     float continuousLines = sin(uv.y * 80.0 + fbm(uv * 3.0) * 5.0);
                     texPattern = 0.9 + (continuousLines * 0.1) * noise(uv * 40.0);
-                } else if (u_tex_type == 5) { // Industrial Environmental Grunge
+                } else if (u_tex_type == 5) { // Industrial Grunge
                     float largeBlotches = fbm(uv * 2.2);
                     float microPitting = noise(uv * u_resolution.xy * 0.2);
                     texPattern = (largeBlotches * 0.65) * (0.4 + microPitting * 0.6);
@@ -472,84 +515,91 @@
                     float primaryFractures = abs(sin(fbm(uv * 9.0) * 8.0));
                     texPattern = smoothstep(0.08, 0.35, primaryFractures);
                 }
-
                 texPattern = mix(1.0, texPattern * u_tex_contrast, u_tex_opacity);
-                color *= texPattern;
 
-                // Apply unique natural base chemical tints
-                if (u_tex_type == 2) color *= vec3(0.93, 0.84, 0.72); // Raw Kraft Paper Brown
-                if (u_tex_type == 5) color *= vec3(0.88, 0.89, 0.84); // Industrial Oxidized Dust Base
+                // 3. Grid Structural Row Matrix Computations
+                vec2 gridUv = uv;
+                if(u_rotate) gridUv = vec2(gridUv.y, gridUv.x);
 
-                // 3. Dynamic Organic Damage Generative Blocks
-                float rawGrain = hash(uv + vec2(sin(u_time * 1.32), cos(u_time * 0.76)));
-                color = mix(color, color * (0.45 + 1.1 * rawGrain), u_grain * 0.45);
+                float bandIndex = floor(gridUv.y * u_bands);
+                float bandNorm = bandIndex / max(u_bands - 1.0, 1.0);
+                
+                float sizeFactor = 1.0;
+                if (u_dist == 1) { // Linear Decreasing
+                    sizeFactor = 1.0 - (bandNorm * 0.85);
+                } else if (u_dist == 2) { // Exponential Decreasing
+                    sizeFactor = exp(-bandNorm * 2.5);
+                } else if (u_dist == 3) { // Banded Alternation
+                    sizeFactor = mod(bandIndex, 2.0) == 0.0 ? 1.0 : 0.35;
+                }
 
-                if(u_dust > 0.0) {
-                    vec2 dUv = floor(uv * vec2(160.0, 160.0) + hash(vec2(floor(u_time * 11.5))));
-                    if(hash(dUv) > (1.0 - (u_dust * 0.016))) {
-                        color = (hash(dUv + 3.1) > 0.45) ? vec3(0.05) : vec3(0.96);
+                float localY = fract(gridUv.y * u_bands);
+                float rowPattern = sin(localY * u_rows * 3.1415926 * sizeFactor + u_time * 2.0);
+                rowPattern = smoothstep(-0.2, 0.2, rowPattern);
+
+                // 4. Combined Structural Value Vector Calculation
+                float rad = radians(u_angle);
+                mat2 rotMat = mat2(cos(rad), -sin(rad), sin(rad), cos(rad));
+                vec2 rotatedUv = rotMat * (uv - 0.5);
+                
+                float grainNoise = hash(uv * u_resolution + vec2(u_time * 12.13));
+                float mixedValue = clamp(lum * 0.4 + (rowPattern * 0.3) + (grainNoise * 0.15) + (rotatedUv.x * 0.15), 0.0, 1.0);
+
+                // Combine texturing layer contribution onto gradient calculations
+                mixedValue = clamp(mixedValue * texPattern, 0.0, 1.0);
+
+                // Apply stepping threshold limits
+                if(u_stepping > 0.0) {
+                    mixedValue = floor(mixedValue * u_stepping) / (u_stepping - 1.0);
+                }
+
+                // 5. Multi-Layer Normalized Weight Array Interpolation
+                vec3 finalColor = u_colors[0];
+                float totalW = 0.0;
+                for(int i = 0; i < u_num_colors; i++) { totalW += u_weights[i]; }
+
+                float accumulated = 0.0;
+                for(int i = 0; i < 4; i++) {
+                    if (i >= u_num_colors - 1) break;
+                    float w1 = u_weights[i] / totalW;
+                    float nextLimit = accumulated + w1;
+                    
+                    if(mixedValue >= accumulated && mixedValue <= nextLimit) {
+                        float t = (mixedValue - accumulated) / w1;
+                        finalColor = mix(u_colors[i], u_colors[i+1], t);
+                        break;
                     }
+                    accumulated = nextLimit;
+                    finalColor = u_colors[i+1];
                 }
 
-                if(u_scratches > 0.0) {
-                    for(int i=0; i<2; i++) {
-                        float sTime = floor(u_time * 7.5 + float(i)*31.7);
-                        float sX = hash(vec2(sTime, 14.2));
-                        if(abs(uv.x - sX) < (0.0004 + u_scratches * 0.0016)) {
-                            float sYStart = hash(vec2(sTime, 61.3));
-                            float sLen = hash(vec2(sTime, 77.2)) * 0.45;
-                            if(uv.y >= sYStart && uv.y <= (sYStart + sLen)) {
-                                color = vec3(hash(uv)*0.25);
-                            }
-                        }
-                    }
-                }
+                // Inject special custom raw texture base color enhancements
+                if (u_tex_type == 2 && u_tex_opacity > 0.0) finalColor *= mix(vec3(1.0), vec3(0.92, 0.83, 0.71), u_tex_opacity);
 
-                // 4. Edge Vignette & Burn Mechanics
-                float dToCenter = length(uv - 0.5);
-                float vignette = smoothstep(0.72 - (u_edge_wear * 0.32), 1.25 - (u_edge_wear * 0.42), dToCenter);
-                color = mix(color, vec3(0.01), vignette);
-
-                if(u_emulsion > 0.0) {
-                    float boundaryNoise = fbm(uv * 4.5);
-                    if(uv.x < (0.018 + u_emulsion * 0.075 * boundaryNoise) || uv.x > (0.982 - u_emulsion * 0.075 * boundaryNoise) ||
-                       uv.y < (0.018 + u_emulsion * 0.075 * boundaryNoise) || uv.y > (0.982 - u_emulsion * 0.075 * boundaryNoise)) {
-                        color = mix(color, vec3(0.94, 0.91, 0.84), u_emulsion);
-                    }
-                }
-
-                if(u_burn > 0.0) {
-                    float burnLuma = smoothstep(0.85 - (u_burn*0.45), 0.08, length(uv - vec2(0.0, 0.5)));
-                    color += vec3(burnLuma * 0.48, burnLuma * 0.16, 0.0) * u_burn;
-                }
-
-                // 5. Chromatic Grade & Age Profile Mixers
-                float luma = dot(color, vec3(0.299, 0.587, 0.114));
-                color = mix(color, vec3(luma), u_fade * 0.75);
-
-                vec3 sepiaColor = vec3(
-                    (luma * 0.393) + (luma * 0.769) + (luma * 0.189),
-                    (luma * 0.349) + (luma * 0.686) + (luma * 0.168),
-                    (luma * 0.272) + (luma * 0.534) + (luma * 0.131)
-                );
-                color = mix(color, sepiaColor, u_sepia);
-
-                fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+                fragColor = vec4(finalColor, 1.0);
             }
         `;
 
-        // --- Context Architecture ---
+        // --- Core Framework State Machine ---
         let gl, program, positionBuffer, vao;
         let textureID = null, sourceElement = null;
         let isVideo = false, isWebcam = false, webcamStream = null;
 
         const state = {
             gamma: 1.0, shadows: 0.0, midtones: 1.0, highlights: 1.0, invert: false,
-            paperType: 0, paperOpacity: 0.35, paperContrast: 1.0,
-            grain: 0.25, dust: 0.15, scratches: 0.20,
-            edgeWear: 0.40, emulsion: 0.0, burn: 0.10,
-            sepia: 0.65, fade: 0.30,
-            animType: 1, speed: 30, time: 0, lastTime: 0
+            paperType: 0, texOpacity: 0.0, texContrast: 1.0,
+            bands: 5, rows: 10, dist: 0, angle: 0, rotate: false,
+            playing: true, speed: 20, modType: 0, loopMode: 'loop',
+            stepping: 0,
+            colors: [
+                { hex: '#000000', weight: 1.0 },
+                { hex: '#333333', weight: 1.0 },
+                { hex: '#888888', weight: 1.0 },
+                { hex: '#cccccc', weight: 1.0 },
+                { hex: '#ffffff', weight: 1.0 }
+            ],
+            aspect: '1:1', uiScale: 100,
+            time: 0, lastFrameTime: 0
         };
 
         const canvas = document.getElementById('glCanvas');
@@ -562,7 +612,7 @@
 
         function initContext() {
             gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
-            if (!gl) { alert('WebGL2 required.'); return; }
+            if (!gl) { alert('WebGL 2 support required.'); return; }
 
             const vs = compileShader(gl.VERTEX_SHADER, vsSource);
             const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
@@ -571,10 +621,10 @@
             gl.attachShader(program, fs);
             gl.linkProgram(program);
 
-            const quad = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+            const quadVertices = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
             positionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
 
             vao = gl.createVertexArray();
             gl.bindVertexArray(vao);
@@ -582,92 +632,374 @@
             gl.enableVertexAttribArray(posLoc);
             gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-            createSolidBaseTexture(38, 36, 33);
+            createSolidTexture(30, 30, 30);
         }
 
-        function compileShader(type, src) {
+        function compileShader(type, source) {
             const shader = gl.createShader(type);
-            gl.shaderSource(shader, src);
+            gl.shaderSource(shader, source);
             gl.compileShader(shader);
             return shader;
         }
 
-        function createSolidBaseTexture(r, g, b) {
+        function createSolidTexture(r, g, b) {
             if(textureID) gl.deleteTexture(textureID);
             textureID = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, textureID);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([r, g, b, 255]));
-            configureTexParameters();
+            setTexParameters();
         }
 
-        function updateTexture(el) {
+        function updateTextureSource(element) {
             if(!textureID) textureID = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, textureID);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el);
-            configureTexParameters();
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
+            setTexParameters();
         }
 
-        function configureTexParameters() {
+        function setTexParameters() {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         }
 
-        function resizeViewport(naturalW = 1000, naturalH = 1000) {
+        function resizeCanvas() {
+            const parts = state.aspect.split(':');
+            const aspectW = parseFloat(parts[0]);
+            const aspectH = parseFloat(parts[1]);
+            const ratio = aspectW / aspectH;
+
             const container = document.getElementById('viewport-container');
-            const ratio = naturalW / naturalH;
-            
-            let w = container.clientWidth - 60;
-            let h = w / ratio;
-            if (h > container.clientHeight - 60) {
-                h = container.clientHeight - 60;
-                w = h * ratio;
+            const maxW = container.clientWidth - 50;
+            const maxH = container.clientHeight - 50;
+
+            let targetW = maxW;
+            let targetH = maxW / ratio;
+
+            if (targetH > maxH) {
+                targetH = maxH;
+                targetW = maxH * ratio;
             }
 
-            wrapper.style.width = `${w}px`;
-            wrapper.style.height = `${h}px`;
-            canvas.width = w;
-            canvas.height = h;
+            wrapper.style.width = `${targetW}px`;
+            wrapper.style.height = `${targetH}px`;
+            wrapper.style.transform = `scale(${state.uiScale / 100})`;
+
+            canvas.width = targetW;
+            canvas.height = targetH;
             gl.viewport(0, 0, canvas.width, canvas.height);
         }
 
-        // --- Render Loop Engine ---
-        function renderPipeline(timestamp) {
-            timestamp *= 0.001;
-            const delta = timestamp - state.lastTime;
-            state.lastTime = timestamp;
+        // --- Active Render Loop Processing ---
+        function render(now) {
+            now *= 0.001;
+            const delta = now - state.lastFrameTime;
+            state.lastFrameTime = now;
 
-            if (state.animType > 0) {
-                let speedMod = state.speed * 0.15;
-                if(state.animType === 2) {
-                    if(Math.random() > 0.85) state.time += delta * speedMod * 7.5;
-                    else state.time += delta * speedMod * 0.12;
-                } else {
-                    state.time += delta * speedMod;
-                }
+            if (state.playing) {
+                state.time += delta * state.speed * 0.1;
             }
 
             if ((isVideo || isWebcam) && sourceElement) {
                 if (sourceElement.readyState >= sourceElement.HAVE_CURRENT_DATA) {
-                    updateTexture(sourceElement);
+                    updateTextureSource(sourceElement);
                 }
             }
 
-            gl.clearColor(0,0,0,1);
+            gl.clearColor(0, 0, 0, 1);
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.useProgram(program);
 
-            gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), canvas.width, canvas.height);
-            gl.uniform1f(gl.getUniformLocation(program, "u_time"), state.time);
+            // Forward Global Configuration Variables Uniforms
             gl.uniform1f(gl.getUniformLocation(program, "u_gamma"), state.gamma);
             gl.uniform1f(gl.getUniformLocation(program, "u_shadows"), state.shadows);
             gl.uniform1f(gl.getUniformLocation(program, "u_midtones"), state.midtones);
             gl.uniform1f(gl.getUniformLocation(program, "u_highlights"), state.highlights);
             gl.uniform1i(gl.getUniformLocation(program, "u_invert"), state.invert ? 1 : 0);
 
+            gl.uniform1i(gl.getUniformLocation(program, "u_paper_type"), state.paperType); // Maps texture variant selection
             gl.uniform1i(gl.getUniformLocation(program, "u_tex_type"), state.paperType);
-            gl.uniform1f(gl.getUniformLocation(program, "u_tex_opacity"), state.paperOpacity);
-            gl.uniform1f(gl.getUniformLocation(program, "u_tex_contrast"), state.paperContrast);
+            gl.uniform1f(gl.getUniformLocation(program, "u_tex_opacity"), state.texOpacity);
+            gl.uniform1f(gl.getUniformLocation(program, "u_tex_contrast"), state.texContrast);
 
-            gl.uniform1f(gl.getUniformLocation(program
+            let dynamicBands = state.bands;
+            let calculatedTime = state.time;
+            
+            if (state.loopMode === 'bounce') {
+                calculatedTime = (Math.sin(state.time) * 0.5 + 0.5) * 10.0;
+            }
+
+            if(state.modType === 1) {
+                dynamicBands += Math.sin(state.time * 2.0) * (state.bands * 0.3);
+            } else if (state.modType === 2) {
+                dynamicBands += Math.abs(Math.sin(state.time * 4.0)) * (state.bands * 0.5);
+            } else if (state.modType === 3) {
+                dynamicBands += (Math.random() - 0.5) * (state.bands * 0.4);
+            }
+
+            gl.uniform1f(gl.getUniformLocation(program, "u_bands"), dynamicBands);
+            gl.uniform1f(gl.getUniformLocation(program, "u_rows"), state.rows);
+            gl.uniform1i(gl.getUniformLocation(program, "u_dist"), state.dist);
+            gl.uniform1f(gl.getUniformLocation(program, "u_angle"), state.angle);
+            gl.uniform1i(gl.getUniformLocation(program, "u_rotate"), state.rotate ? 1 : 0);
+            gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), canvas.width, canvas.height);
+            gl.uniform1f(gl.getUniformLocation(program, "u_time"), calculatedTime);
+            gl.uniform1f(gl.getUniformLocation(program, "u_stepping"), state.stepping > 0 ? state.stepping : 0.0);
+
+            gl.uniform1i(gl.getUniformLocation(program, "u_num_colors"), state.colors.length);
+
+            const colorsFlat = [];
+            const weightsFlat = [];
+            state.colors.forEach(c => {
+                const rgb = hexToRgb(c.hex);
+                colorsFlat.push(rgb.r, rgb.g, rgb.b);
+                weightsFlat.push(c.weight);
+            });
+
+            gl.uniform3fv(gl.getUniformLocation(program, "u_colors"), new Float32Array(colorsFlat));
+            gl.uniform1fv(gl.getUniformLocation(program, "u_weights"), new Float32Array(weightsFlat));
+
+            gl.bindVertexArray(vao);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            requestAnimationFrame(render);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? { r: parseInt(result[1], 16)/255, g: parseInt(result[2], 16)/255, b: parseInt(result[3], 16)/255 } : { r:0, g:0, b:0 };
+        }
+
+        // --- UI Initialization Handles & Color Grids Drag Management ---
+        function generateColorListUI() {
+            const container = document.getElementById('color-list');
+            container.innerHTML = '';
+            state.colors.forEach((col, idx) => {
+                const row = document.createElement('div');
+                row.className = 'color-item';
+                row.draggable = true;
+                row.dataset.index = idx;
+                row.innerHTML = `
+                    <span style="color:#444;">☰</span>
+                    <input type="color" value="${col.hex}">
+                    <input type="range" min="0.1" max="5.0" step="0.1" value="${col.weight}">
+                `;
+
+                row.querySelector('input[type="color"]').addEventListener('input', (e) => { state.colors[idx].hex = e.target.value; });
+                row.querySelector('input[type="range"]').addEventListener('input', (e) => { state.colors[idx].weight = parseFloat(e.target.value); });
+                
+                row.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', idx); row.style.opacity = '0.4'; });
+                row.addEventListener('dragend', () => row.style.opacity = '1');
+                row.addEventListener('dragover', (e) => e.preventDefault());
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIdx = idx;
+                    if(fromIdx !== toIdx) {
+                        const targeted = state.colors.splice(fromIdx, 1)[0];
+                        state.colors.splice(toIdx, 0, targeted);
+                        generateColorListUI();
+                    }
+                });
+                container.appendChild(row);
+            });
+        }
+
+        function processFile(file) {
+            if(!file) return;
+            const url = URL.createObjectURL(file);
+            
+            if(webcamStream) { webcamStream.getTracks().forEach(t => t.stop()); isWebcam = false; document.getElementById('webcam-btn').classList.remove('active'); }
+
+            if(file.type.startsWith('image/')) {
+                isVideo = false;
+                const img = new Image();
+                img.onload = function() {
+                    sourceElement = img;
+                    updateTextureSource(img);
+                    dropZone.innerText = `IMAGE: ${file.name.toUpperCase()}`;
+                };
+                img.src = url;
+            } else if(file.type.startsWith('video/')) {
+                isVideo = true;
+                const video = document.createElement('video');
+                video.src = url; video.autoplay = true; video.loop = true; video.muted = true; video.play();
+                video.onloadeddata = function() {
+                    sourceElement = video;
+                    dropZone.innerText = `VIDEO: ${file.name.toUpperCase()}`;
+                };
+            }
+        }
+
+        function initInterface() {
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
+            
+            window.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#fff'; });
+            window.addEventListener('dragleave', () => dropZone.style.borderColor = '#222');
+            window.addEventListener('drop', (e) => {
+                e.preventDefault(); dropZone.style.borderColor = '#222';
+                if(e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
+            });
+
+            // Interactive Texture Grid Selection Setup Loops
+            document.querySelectorAll('.texture-option').forEach(opt => {
+                opt.addEventListener('click', function() {
+                    document.querySelectorAll('.texture-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    state.paperType = parseInt(this.dataset.value);
+                });
+            });
+
+            document.getElementById('webcam-btn').addEventListener('click', async function() {
+                if(isWebcam) {
+                    if(webcamStream) webcamStream.getTracks().forEach(track => track.stop());
+                    isWebcam = false; this.classList.remove('active');
+                    createSolidTexture(30, 30, 30);
+                    dropZone.innerText = "DROP IMAGE / VIDEO HERE";
+                } else {
+                    try {
+                        webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        const video = document.createElement('video');
+                        video.srcObject = webcamStream; video.autoplay = true; video.play();
+                        video.onloadeddata = () => { sourceElement = video; isWebcam = true; isVideo = false; this.classList.add('active'); dropZone.innerText = "WEBCAM STREAM LIVE"; };
+                    } catch(err) { alert("Webcam unavailable."); }
+                }
+            });
+
+            const sliders = [
+                { id: 'p-gamma', var: 'gamma', label: 'v-gamma' },
+                { id: 'p-shadows', var: 'shadows', label: 'v-shadows' },
+                { id: 'p-midtones', var: 'midtones', label: 'v-midtones' },
+                { id: 'p-highlights', var: 'highlights', label: 'v-highlights' },
+                { id: 'p-tex-opacity', var: 'texOpacity', label: 'v-tex-opacity' },
+                { id: 'p-tex-contrast', var: 'texContrast', label: 'v-tex-contrast' },
+                { id: 'p-bands', var: 'bands', label: 'v-bands' },
+                { id: 'p-rows', var: 'rows', label: 'v-rows' },
+                { id: 'p-angle', var: 'angle', label: 'v-angle', suffix: '°' },
+                { id: 'p-speed', var: 'speed', label: 'v-speed' },
+                { id: 'p-step', var: 'stepping', label: 'v-step' }
+            ];
+
+            sliders.forEach(b => {
+                const el = document.getElementById(b.id);
+                const lbl = document.getElementById(b.label);
+                el.addEventListener('input', (e) => {
+                    state[b.var] = parseFloat(e.target.value);
+                    lbl.innerText = state[b.var] + (b.suffix || '');
+                });
+            });
+
+            document.getElementById('p-invert').addEventListener('click', function() {
+                state.invert = !state.invert; this.classList.toggle('active', state.invert);
+                this.innerText = `Invert Image: ${state.invert ? 'ON' : 'OFF'}`;
+            });
+
+            document.getElementById('p-rotate').addEventListener('click', function() {
+                state.rotate = !state.rotate; this.classList.toggle('active', state.rotate);
+                this.innerText = `Rotate Grid 90°: ${state.rotate ? 'ON' : 'OFF'}`;
+            });
+
+            document.getElementById('anim-toggle').addEventListener('click', function() {
+                state.playing = !state.playing; this.classList.toggle('active', state.playing);
+                this.innerText = `Engine: ${state.playing ? 'PLAYING' : 'PAUSED'}`;
+            });
+
+            document.getElementById('p-dist').addEventListener('change', (e) => { state.dist = parseInt(e.target.value); });
+            document.getElementById('p-mod-type').addEventListener('change', (e) => { state.modType = parseInt(e.target.value); });
+            document.getElementById('p-aspect').addEventListener('change', (e) => { state.aspect = e.target.value; resizeCanvas(); });
+
+            document.getElementById('p-scale').addEventListener('input', (e) => {
+                state.uiScale = parseInt(e.target.value);
+                document.getElementById('v-scale').innerText = `${state.uiScale}%`;
+                resizeCanvas();
+            });
+
+            const loopBtn = document.getElementById('p-loop-grad');
+            const bounceBtn = document.getElementById('p-bounce-grad');
+            loopBtn.addEventListener('click', () => { state.loopMode = 'loop'; loopBtn.classList.add('active'); bounceBtn.classList.remove('active'); });
+            bounceBtn.addEventListener('click', () => { state.loopMode = 'bounce'; bounceBtn.classList.add('active'); loopBtn.classList.remove('active'); });
+
+            // Still Image Exporter Click Trigger Binding
+            document.getElementById('exp-still-custom').addEventListener('click', () => {
+                const specWidth = parseInt(document.getElementById('p-target-res').value) || 4096;
+                captureCustomHighResStill(specWidth);
+            });
+
+            document.getElementById('exp-video').addEventListener('click', toggleVideoRecording);
+
+            generateColorListUI();
+        }
+
+        // --- Production Quality Precision High Resolution Still Image Exporter ---
+        function captureCustomHighResStill(widthWidth) {
+            const cachedW = canvas.width;
+            const cachedH = canvas.height;
+            const currentRatio = cachedW / cachedH;
+
+            let finalW = Math.min(Math.max(widthWidth, 500), 8192);
+            let finalH = Math.round(finalW / currentRatio);
+
+            // Re-allocate hardware buffer layout metrics
+            canvas.width = finalW;
+            canvas.height = finalH;
+            gl.viewport(0, 0, finalW, finalH);
+
+            // Force immediate synchronous master canvas render pass
+            render(performance.now());
+
+            // Extract native raw asset package array
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.download = `grain_grid_master_${finalW}x${finalH}.png`;
+            downloadAnchor.href = canvas.toDataURL('image/png');
+            downloadAnchor.click();
+
+            // Revert layout context back to UI scales seamlessly
+            canvas.width = cachedW;
+            canvas.height = cachedH;
+            gl.viewport(0, 0, cachedW, cachedH);
+        }
+
+        // --- Video Recorder WebM Stream Framework ---
+        function toggleVideoRecording() {
+            const btn = document.getElementById('exp-video');
+            const statusIndicator = document.getElementById('rec-status');
+            
+            if (isRecording) {
+                mediaRecorder.stop(); isRecording = false;
+                btn.innerText = "Record WebM Video Output"; btn.style.background = "#000";
+                statusIndicator.style.display = "none";
+            } else {
+                recordedChunks = [];
+                const stream = canvas.captureStream(30);
+                
+                let options = { mimeType: 'video/webm;codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm;codecs=vp8' };
+
+                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const link = document.createElement('a');
+                    link.download = `grain_grid_sequence_${Date.now()}.webm`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                };
+
+                mediaRecorder.start(); isRecording = true;
+                btn.innerText = "STOP CONSOLE ENCODER"; btn.style.background = "#440000";
+                statusIndicator.style.display = "block";
+            }
+        }
+
+        window.onload = () => {
+            initContext();
+            initInterface();
+            resizeCanvas();
+            requestAnimationFrame(render);
+        };
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>
